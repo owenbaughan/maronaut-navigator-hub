@@ -39,6 +39,7 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-8">
           <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
           <NavLink to="/trips" className="nav-link">Trip Planning</NavLink>
+          <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
           <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
           <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
           <NavLink to="/profile" className="btn-primary">My Profile</NavLink>
@@ -70,6 +71,13 @@ const Header = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Trip Planning
+            </NavLink>
+            <NavLink 
+              to="/friends" 
+              className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Friends Feed
             </NavLink>
             <NavLink 
               to="/reviews" 
