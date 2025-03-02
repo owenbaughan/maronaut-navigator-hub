@@ -10,6 +10,7 @@ import Trips from "./pages/Trips";
 import Reviews from "./pages/Reviews";
 import Marketplace from "./pages/Marketplace";
 import Profile from "./pages/Profile";
+import FriendsFeed from "./pages/FriendsFeed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/trips" element={<Trips />} />
+          <Route path="/friends" element={<FriendsFeed />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/profile" element={<Profile />} />
