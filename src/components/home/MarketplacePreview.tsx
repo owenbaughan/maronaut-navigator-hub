@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Tool, Users, Anchor, LifeBuoy, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Wrench, Users, Anchor, LifeBuoy, ArrowRight } from 'lucide-react';
 
 const CategoryCard = ({ icon: Icon, title, count }: { icon: React.ElementType; title: string; count: number }) => {
   return (
@@ -38,7 +38,7 @@ const MarketplacePreview = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
           <CategoryCard 
-            icon={Tool} 
+            icon={Wrench} 
             title="Maintenance & Repair" 
             count={128} 
           />
