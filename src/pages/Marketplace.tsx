@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { Search, Filter, Star, DollarSign, MapPin, User, Tag, Calendar } from 'lucide-react';
@@ -16,8 +16,8 @@ const ListingCard = ({ title, category, price, location, seller, image, rating, 
   date: string;
 }) => {
   return (
-    <div className="glass-panel overflow-hidden flex flex-col md:flex-row animate-fade-in">
-      <div className="md:w-1/3 h-48 md:h-auto relative">
+    <div className="glass-panel h-full overflow-hidden flex flex-col animate-fade-in">
+      <div className="h-48 relative">
         <img 
           src={image} 
           alt={title} 
@@ -27,51 +27,43 @@ const ListingCard = ({ title, category, price, location, seller, image, rating, 
           {category}
         </div>
       </div>
-      <div className="p-6 md:w-2/3">
+      <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-semibold text-maronaut-700">{title}</h3>
-          <div className="flex items-center text-lg font-bold text-maronaut-700">
-            <DollarSign size={18} className="text-maronaut-500" />
+          <h3 className="text-lg font-semibold text-maronaut-700 line-clamp-2">{title}</h3>
+          <div className="flex items-center text-base font-bold text-maronaut-700 whitespace-nowrap ml-2">
+            <DollarSign size={16} className="text-maronaut-500" />
             {price}
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-4 mb-4 text-sm">
+        <div className="flex flex-wrap gap-2 mb-2 text-xs">
           <div className="flex items-center text-maronaut-500">
-            <MapPin size={14} className="mr-1" />
+            <MapPin size={12} className="mr-1" />
             {location}
           </div>
           <div className="flex items-center text-maronaut-500">
-            <User size={14} className="mr-1" />
-            {seller}
-          </div>
-          <div className="flex items-center text-maronaut-500">
-            <Star size={14} fill="currentColor" className="mr-1" />
+            <Star size={12} fill="currentColor" className="mr-1" />
             {rating.toFixed(1)}
-          </div>
-          <div className="flex items-center text-maronaut-500">
-            <Calendar size={14} className="mr-1" />
-            {date}
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2 mb-4">
-          {tags.map((tag, index) => (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {tags.slice(0, 3).map((tag, index) => (
             <span 
               key={index} 
-              className="flex items-center px-2 py-1 bg-maronaut-100 text-maronaut-600 text-xs rounded-full"
+              className="flex items-center px-2 py-0.5 bg-maronaut-100 text-maronaut-600 text-xs rounded-full"
             >
-              <Tag size={10} className="mr-1" />
+              <Tag size={8} className="mr-1" />
               {tag}
             </span>
           ))}
         </div>
         
-        <div className="flex justify-between mt-4 pt-4 border-t border-maronaut-100">
-          <button className="text-maronaut-500 hover:text-maronaut-600 font-medium">
-            View Details
+        <div className="mt-auto pt-3 border-t border-maronaut-100 flex justify-between">
+          <button className="text-xs text-maronaut-500 hover:text-maronaut-600 font-medium">
+            Details
           </button>
-          <button className="px-4 py-1 bg-maronaut-500 text-white rounded-full text-sm font-medium">
+          <button className="px-3 py-1 bg-maronaut-500 text-white rounded-full text-xs font-medium">
             Contact
           </button>
         </div>
@@ -81,6 +73,9 @@ const ListingCard = ({ title, category, price, location, seller, image, rating, 
 };
 
 const Marketplace = () => {
+  const [radius, setRadius] = useState<number>(50);
+  const [location, setLocation] = useState<string>("");
+  
   const listings = [
     {
       title: "Professional Hull Cleaning Service",
@@ -114,6 +109,61 @@ const Marketplace = () => {
       rating: 4.9,
       tags: ["Guide", "Charter", "Local Expert"],
       date: "Posted 1 week ago"
+    },
+    {
+      title: "Premium Marine Safety Equipment",
+      category: "For Sale",
+      price: "1,200",
+      location: "Seattle, WA",
+      seller: "Marine Safety Supply",
+      image: "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
+      rating: 4.7,
+      tags: ["Safety", "Equipment", "Life Jackets"],
+      date: "Posted 3 days ago"
+    },
+    {
+      title: "Marine Engine Repair & Maintenance",
+      category: "Service",
+      price: "125/hr",
+      location: "Miami, FL",
+      seller: "Coastal Marine Engines",
+      image: "https://images.unsplash.com/photo-1553243151-0e1129d3b721?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
+      rating: 4.6,
+      tags: ["Engine", "Repair", "Maintenance"],
+      date: "Posted 1 day ago"
+    },
+    {
+      title: "Professional Sailing Instructor",
+      category: "Crew",
+      price: "250/day",
+      location: "Annapolis, MD",
+      seller: "Captain Sarah",
+      image: "https://images.unsplash.com/photo-1513618827672-0d7f5e227c9d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
+      rating: 5.0,
+      tags: ["Instructor", "Lessons", "Certification"],
+      date: "Posted 4 days ago"
+    },
+    {
+      title: "Custom Yacht Interior Design",
+      category: "Service",
+      price: "3,500+",
+      location: "San Diego, CA",
+      seller: "Luxury Marine Interiors",
+      image: "https://images.unsplash.com/photo-1599809275671-b5942cabc7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
+      rating: 4.9,
+      tags: ["Design", "Interior", "Custom"],
+      date: "Posted 1 week ago"
+    },
+    {
+      title: "Vintage Sailboat Equipment Collection",
+      category: "For Sale",
+      price: "4,800",
+      location: "Portland, ME",
+      seller: "Vintage Marine Collector",
+      image: "https://images.unsplash.com/photo-1516571748-3a7192b19fcf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
+      rating: 4.3,
+      tags: ["Vintage", "Collectible", "Equipment"],
+      date: "Posted 2 weeks ago"
     }
   ];
 
@@ -130,31 +180,59 @@ const Marketplace = () => {
               Find services, equipment, boats, and crew for your sailing needs.
             </p>
 
-            <div className="glass-panel p-4 flex flex-col md:flex-row gap-4 mb-8 animate-fade-in animate-delay-2">
-              <div className="flex-1 relative">
-                <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search the marketplace" 
-                  className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
-                />
+            <div className="glass-panel p-4 flex flex-col gap-4 mb-8 animate-fade-in animate-delay-2">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search the marketplace" 
+                    className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select className="px-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300 text-maronaut-600">
+                    <option>All Categories</option>
+                    <option>Services</option>
+                    <option>For Sale</option>
+                    <option>Crew</option>
+                    <option>Rentals</option>
+                  </select>
+                  <button className="flex items-center justify-center px-4 py-2 border border-maronaut-200 rounded-lg text-maronaut-600 hover:bg-maronaut-50">
+                    <Filter size={18} className="mr-2" />
+                    Filters
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <select className="px-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300 text-maronaut-600">
-                  <option>All Categories</option>
-                  <option>Services</option>
-                  <option>For Sale</option>
-                  <option>Crew</option>
-                  <option>Rentals</option>
-                </select>
-                <button className="flex items-center justify-center px-4 py-2 border border-maronaut-200 rounded-lg text-maronaut-600 hover:bg-maronaut-50">
-                  <Filter size={18} className="mr-2" />
-                  Filters
-                </button>
+              
+              {/* Geographical radius filter */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="relative flex-1">
+                  <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Enter your location" 
+                    className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:w-auto w-full">
+                  <span className="text-maronaut-600 whitespace-nowrap">Radius: {radius} miles</span>
+                  <input
+                    type="range"
+                    min="5"
+                    max="500"
+                    step="5"
+                    value={radius}
+                    onChange={(e) => setRadius(parseInt(e.target.value))}
+                    className="w-full md:w-48 accent-maronaut-500"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
               {listings.map((listing, index) => (
                 <ListingCard 
                   key={index} 
