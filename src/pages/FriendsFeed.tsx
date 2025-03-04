@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import FriendsList from '../components/friends/FriendsList';
 import FriendSearch from '../components/friends/FriendSearch';
 import TripTimeline from '../components/friends/TripTimeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from '../components/ui/use-toast';
 
 const FriendsFeed = () => {
   useEffect(() => {
