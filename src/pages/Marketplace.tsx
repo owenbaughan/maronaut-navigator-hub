@@ -2,7 +2,11 @@
 import React, { useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { Search, Filter, Star, DollarSign, MapPin, User, Tag, Calendar } from 'lucide-react';
+import { Search, Filter, Star, DollarSign, MapPin, User, Tag, Calendar, Plus } from 'lucide-react';
+import AddListingForm from '../components/marketplace/AddListingForm';
+import { ToastProvider } from '@/components/ui/toast';
+import { ToastViewport } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 
 const ListingCard = ({ title, category, price, location, seller, image, rating, tags, date }: { 
   title: string;
@@ -73,10 +77,11 @@ const ListingCard = ({ title, category, price, location, seller, image, rating, 
 };
 
 const Marketplace = () => {
+  const { toast } = useToast();
   const [radius, setRadius] = useState<number>(50);
   const [location, setLocation] = useState<string>("");
-  
-  const listings = [
+  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [listings, setListings] = useState([
     {
       title: "Professional Hull Cleaning Service",
       category: "Service",
@@ -165,104 +170,133 @@ const Marketplace = () => {
       tags: ["Vintage", "Collectible", "Equipment"],
       date: "Posted 2 weeks ago"
     }
-  ];
+  ]);
+
+  const handleAddListing = (newListing: any) => {
+    setListings([newListing, ...listings]);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow pt-20">
-        <section className="py-12 bg-gradient-to-b from-maronaut-50 to-white">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-maronaut-700 mb-2 animate-fade-in">
-              Sailing Marketplace
-            </h1>
-            <p className="text-lg text-maronaut-600/80 mb-8 animate-fade-in animate-delay-1">
-              Find services, equipment, boats, and crew for your sailing needs.
-            </p>
-
-            <div className="glass-panel p-4 flex flex-col gap-4 mb-8 animate-fade-in animate-delay-2">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search the marketplace" 
-                    className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
-                  />
+      <ToastProvider>
+        <main className="flex-grow pt-20">
+          <section className="py-12 bg-gradient-to-b from-maronaut-50 to-white">
+            <div className="container mx-auto px-4">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold text-maronaut-700 mb-2 animate-fade-in">
+                    Sailing Marketplace
+                  </h1>
+                  <p className="text-lg text-maronaut-600/80 animate-fade-in animate-delay-1">
+                    Find services, equipment, boats, and crew for your sailing needs.
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <select className="px-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300 text-maronaut-600">
-                    <option>All Categories</option>
-                    <option>Services</option>
-                    <option>For Sale</option>
-                    <option>Crew</option>
-                    <option>Rentals</option>
-                  </select>
-                  <button className="flex items-center justify-center px-4 py-2 border border-maronaut-200 rounded-lg text-maronaut-600 hover:bg-maronaut-50">
-                    <Filter size={18} className="mr-2" />
-                    Filters
-                  </button>
-                </div>
-              </div>
-              
-              {/* Geographical radius filter */}
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1">
-                  <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Enter your location" 
-                    className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col md:flex-row md:items-center gap-2 md:w-auto w-full">
-                  <span className="text-maronaut-600 whitespace-nowrap">Radius: {radius} miles</span>
-                  <input
-                    type="range"
-                    min="5"
-                    max="500"
-                    step="5"
-                    value={radius}
-                    onChange={(e) => setRadius(parseInt(e.target.value))}
-                    className="w-full md:w-48 accent-maronaut-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
-              {listings.map((listing, index) => (
-                <ListingCard 
-                  key={index} 
-                  {...listing} 
-                />
-              ))}
-            </div>
-
-            <div className="flex justify-center">
-              <div className="glass-panel p-2 inline-flex">
-                <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg">
-                  Previous
-                </button>
-                <button className="px-4 py-2 bg-maronaut-500 text-white rounded-lg mx-1">
-                  1
-                </button>
-                <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg mx-1">
-                  2
-                </button>
-                <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg mx-1">
-                  3
-                </button>
-                <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg">
-                  Next
+                <button 
+                  onClick={() => setShowAddForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-maronaut-500 text-white rounded-lg hover:bg-maronaut-600 animate-fade-in"
+                >
+                  <Plus size={18} />
+                  <span className="hidden sm:inline">Add Listing</span>
                 </button>
               </div>
+
+              {showAddForm ? (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+                  <AddListingForm 
+                    onClose={() => setShowAddForm(false)}
+                    onAddListing={handleAddListing}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="glass-panel p-4 flex flex-col gap-4 mb-8 animate-fade-in animate-delay-2">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1 relative">
+                        <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Search the marketplace" 
+                          className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <select className="px-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300 text-maronaut-600">
+                          <option>All Categories</option>
+                          <option>Services</option>
+                          <option>For Sale</option>
+                          <option>Crew</option>
+                          <option>Rentals</option>
+                        </select>
+                        <button className="flex items-center justify-center px-4 py-2 border border-maronaut-200 rounded-lg text-maronaut-600 hover:bg-maronaut-50">
+                          <Filter size={18} className="mr-2" />
+                          Filters
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Geographical radius filter */}
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                      <div className="relative flex-1">
+                        <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-maronaut-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Enter your location" 
+                          className="w-full pl-10 pr-4 py-2 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col md:flex-row md:items-center gap-2 md:w-auto w-full">
+                        <span className="text-maronaut-600 whitespace-nowrap">Radius: {radius} miles</span>
+                        <input
+                          type="range"
+                          min="5"
+                          max="500"
+                          step="5"
+                          value={radius}
+                          onChange={(e) => setRadius(parseInt(e.target.value))}
+                          className="w-full md:w-48 accent-maronaut-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+                    {listings.map((listing, index) => (
+                      <ListingCard 
+                        key={index} 
+                        {...listing} 
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex justify-center">
+                    <div className="glass-panel p-2 inline-flex">
+                      <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg">
+                        Previous
+                      </button>
+                      <button className="px-4 py-2 bg-maronaut-500 text-white rounded-lg mx-1">
+                        1
+                      </button>
+                      <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg mx-1">
+                        2
+                      </button>
+                      <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg mx-1">
+                        3
+                      </button>
+                      <button className="px-4 py-2 text-maronaut-600 hover:bg-maronaut-100 rounded-lg">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
+        <ToastViewport />
+      </ToastProvider>
       <Footer />
     </div>
   );
