@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { Star, MapPin, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Star, MapPin, ChevronRight, ChevronLeft, Navigation, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const ReviewCard = ({ name, location, rating, image, tags }: { 
+const ReviewCard = ({ name, location, rating, image, tags, reviewCount }: { 
   name: string; 
   location: string; 
   rating: number; 
   image: string;
   tags: string[];
+  reviewCount: number;
 }) => {
   return (
     <div className="glass-panel p-6 flex flex-col h-full">
@@ -30,6 +31,10 @@ const ReviewCard = ({ name, location, rating, image, tags }: {
             />
           ))}
           <span className="ml-2 text-sm font-medium">{rating.toFixed(1)}</span>
+          <div className="flex items-center ml-2 text-maronaut-400 text-xs">
+            <Users size={12} className="mr-1" />
+            {reviewCount}
+          </div>
         </div>
         <div className="flex items-center text-sm text-maronaut-500">
           <MapPin size={14} className="mr-1" />
@@ -47,12 +52,21 @@ const ReviewCard = ({ name, location, rating, image, tags }: {
           </span>
         ))}
       </div>
-      <Link 
-        to="/reviews" 
-        className="mt-auto text-maronaut-500 text-sm font-medium hover:text-maronaut-600 transition-colors flex items-center"
-      >
-        View Details <ChevronRight size={16} className="ml-1" />
-      </Link>
+      <div className="mt-auto flex justify-between items-center">
+        <Link 
+          to="/reviews" 
+          className="text-maronaut-500 text-sm font-medium hover:text-maronaut-600 transition-colors flex items-center"
+        >
+          View Details <ChevronRight size={16} className="ml-1" />
+        </Link>
+        <Link 
+          to={`/trips?destination=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`} 
+          className="text-maronaut-500 text-sm font-medium hover:text-maronaut-600 transition-colors flex items-center"
+          title="Plan a trip to this location"
+        >
+          <Navigation size={16} className="mr-1" /> Plan
+        </Link>
+      </div>
     </div>
   );
 };
@@ -64,21 +78,24 @@ const ReviewsPreview = () => {
       location: "San Francisco, CA",
       rating: 4.8,
       image: "https://images.unsplash.com/photo-1587132569067-3243dd1cea34?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
-      tags: ["Protected Harbor", "Full Service", "Clean Facilities"]
+      tags: ["Protected Harbor", "Full Service", "Clean Facilities"],
+      reviewCount: 42
     },
     {
       name: "Clearwater Cove",
       location: "Key West, FL",
       rating: 4.5,
       image: "https://images.unsplash.com/photo-1623709533181-28c19382188d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
-      tags: ["Snorkeling", "Quiet Anchorage", "Crystal Water"]
+      tags: ["Snorkeling", "Quiet Anchorage", "Crystal Water"],
+      reviewCount: 27
     },
     {
       name: "Blue Ocean Marina",
       location: "Newport, RI",
       rating: 4.2,
       image: "https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80",
-      tags: ["Historic", "Restaurant", "Fuel Station"]
+      tags: ["Historic", "Restaurant", "Fuel Station"],
+      reviewCount: 18
     }
   ];
 
