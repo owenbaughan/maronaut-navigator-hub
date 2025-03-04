@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  base: "./", // This is critical for GitHub Pages to correctly resolve relative paths
   build: {
     // Ensure proper MIME types
     assetsDir: 'assets',
@@ -31,4 +32,3 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
-
