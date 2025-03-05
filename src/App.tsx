@@ -21,7 +21,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 const queryClient = new QueryClient();
 
 // Get the base URL from Vite's environment
-const BASE_URL = import.meta.env.MODE === 'production' ? '/maronaut-navigator-hub/' : '/';
+const BASE_URL = import.meta.env.BASE_URL;
 
 const App = () => {
   const { isLoaded } = useAuth();
