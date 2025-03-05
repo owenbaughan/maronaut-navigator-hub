@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  base: "./", // Critical for GitHub Pages to correctly resolve relative paths
+  base: "/maronaut-navigator-hub/", // Updated to include repository name for GitHub Pages
   build: {
     // Ensure proper MIME types for assets
     assetsDir: 'assets',
