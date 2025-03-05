@@ -20,6 +20,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         // Redirect to sign-in page with the return URL
         navigate(`/sign-in?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
       }
+      // Set checking to false regardless of sign-in status to allow rendering
       setIsChecking(false);
     }
   }, [isSignedIn, isLoaded, navigate, location.pathname]);
@@ -29,8 +30,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // Only render children when authenticated
-  return isSignedIn ? <>{children}</> : null;
+  // Return children when authenticated
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

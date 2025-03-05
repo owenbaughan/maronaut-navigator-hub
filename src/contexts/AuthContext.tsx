@@ -17,7 +17,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const requireAuth = () => {
     if (!isSignedIn) {
-      navigate('/sign-in');
+      // Store current path for redirect after login
+      const currentPath = window.location.pathname;
+      navigate(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
     }
   };
 
