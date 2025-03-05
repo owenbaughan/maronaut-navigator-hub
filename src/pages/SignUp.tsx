@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ const SignUp = () => {
   const redirectPath = searchParams.get('redirect') || '/dashboard';
   
   // If user is already signed in, redirect them (but only after Clerk has loaded)
-  React.useEffect(() => {
+  useEffect(() => {
     if (isLoaded && isSignedIn) {
       navigate(redirectPath, { replace: true });
     }

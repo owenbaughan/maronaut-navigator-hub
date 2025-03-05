@@ -3,6 +3,7 @@ import React, { createContext, useContext } from 'react';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
+// Define the shape of our auth context
 interface AuthContextType {
   isSignedIn: boolean;
   userId: string | null;
@@ -10,8 +11,10 @@ interface AuthContextType {
   requireAuth: () => void;
 }
 
+// Create the context with undefined as initial value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// AuthProvider component that will wrap our app
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSignedIn, userId, isLoaded } = useClerkAuth();
   const navigate = useNavigate();
@@ -41,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -49,6 +53,7 @@ export const useAuth = () => {
   return context;
 };
 
+// Component that only renders its children when user is signed in
 export const SignedInContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
   
@@ -59,6 +64,7 @@ export const SignedInContent: React.FC<{ children: React.ReactNode }> = ({ child
   return isSignedIn ? <>{children}</> : null;
 };
 
+// Component that only renders its children when user is signed out
 export const SignedOutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
   
