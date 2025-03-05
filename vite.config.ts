@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   // Get the base URL from environment variables or use the repository name for production
   const base = mode === 'production' 
-    ? process.env.VITE_BASE_URL || "/maronaut-navigator-hub/" 
+    ? process.env.VITE_BASE_URL || "/" 
     : "/";
   
   console.log(`Building with base: ${base} in ${mode} mode`);

@@ -49,7 +49,7 @@ jobs:
         env:
           NODE_ENV: production
           # Ensure the base URL is set correctly for GitHub Pages
-          VITE_BASE_URL: "/maronaut-navigator-hub/"
+          VITE_BASE_URL: "/${{ github.event.repository.name }}/"
       - name: Debug build output
         run: |
           echo "Build output contents:"
