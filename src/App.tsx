@@ -17,8 +17,63 @@ import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 const queryClient = new QueryClient();
+
+const AppRoutes = () => {
+  const { isLoaded } = useClerkAuth();
+
+  // Show loading state while Clerk is loading
+  if (!isLoaded) {
+    return <div className="min-h-screen flex items-center justify-center">Loading auth...</div>;
+  }
+
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Index />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/sign-up" element={<SignUp />} />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/trips" element={
+        <ProtectedRoute>
+          <Trips />
+        </ProtectedRoute>
+      } />
+      <Route path="/friends" element={
+        <ProtectedRoute>
+          <FriendsFeed />
+        </ProtectedRoute>
+      } />
+      <Route path="/reviews" element={
+        <ProtectedRoute>
+          <Reviews />
+        </ProtectedRoute>
+      } />
+      <Route path="/marketplace" element={
+        <ProtectedRoute>
+          <Marketplace />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      
+      {/* 404 Route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,48 +82,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/sign-in" element={<SignIn />} />
-            <Route path="/sign-up" element={<SignUp />} />
-            
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/trips" element={
-              <ProtectedRoute>
-                <Trips />
-              </ProtectedRoute>
-            } />
-            <Route path="/friends" element={
-              <ProtectedRoute>
-                <FriendsFeed />
-              </ProtectedRoute>
-            } />
-            <Route path="/reviews" element={
-              <ProtectedRoute>
-                <Reviews />
-              </ProtectedRoute>
-            } />
-            <Route path="/marketplace" element={
-              <ProtectedRoute>
-                <Marketplace />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

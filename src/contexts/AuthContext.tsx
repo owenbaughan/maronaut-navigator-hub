@@ -1,31 +1,41 @@
 
-import React, { createContext, useContext } from 'react';
-import { useAuth as useClerkAuth, SignedIn, SignedOut } from '@clerk/clerk-react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  isSignedIn: boolean;
+  isSignedIn: boolean | null;
   userId: string | null;
+  isLoaded: boolean;
   requireAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSignedIn, userId } = useClerkAuth();
+  const { isSignedIn, userId, isLoaded } = useClerkAuth();
+  const [authInitialized, setAuthInitialized] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isLoaded) {
+      setAuthInitialized(true);
+    }
+  }, [isLoaded]);
+
   const requireAuth = () => {
-    if (!isSignedIn) {
+    if (isLoaded && !isSignedIn) {
       // Store current path for redirect after login
       const currentPath = window.location.pathname;
       navigate(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
     }
   };
 
+  // Render children only when auth is initialized to prevent flash of content
   return (
-    <AuthContext.Provider value={{ isSignedIn, userId, requireAuth }}>
-      {children}
+    <AuthContext.Provider value={{ isSignedIn: isSignedIn || false, userId, isLoaded, requireAuth }}>
+      {authInitialized ? children : 
+        <div className="min-h-screen flex items-center justify-center">Initializing...</div>}
     </AuthContext.Provider>
   );
 };
@@ -39,9 +49,21 @@ export const useAuth = () => {
 };
 
 export const SignedInContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <SignedIn>{children}</SignedIn>;
+  const { isSignedIn, isLoaded } = useAuth();
+  
+  if (!isLoaded) {
+    return <div className="p-4">Loading...</div>;
+  }
+  
+  return isSignedIn ? <>{children}</> : null;
 };
 
 export const SignedOutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <SignedOut>{children}</SignedOut>;
+  const { isSignedIn, isLoaded } = useAuth();
+  
+  if (!isLoaded) {
+    return <div className="p-4">Loading...</div>;
+  }
+  
+  return !isSignedIn ? <>{children}</> : null;
 };

@@ -14,13 +14,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Only redirect after Clerk has loaded
     if (isLoaded) {
       if (!isSignedIn) {
         // Redirect to sign-in page with the return URL
         navigate(`/sign-in?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
       }
-      // Set checking to false regardless of sign-in status to allow rendering
       setIsChecking(false);
     }
   }, [isSignedIn, isLoaded, navigate, location.pathname]);
