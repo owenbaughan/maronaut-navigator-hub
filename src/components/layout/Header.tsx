@@ -77,13 +77,12 @@ const Header = () => {
           ) : (
             // Navigation for non-logged-in users
             <>
-              <Button 
-                variant="ghost" 
+              <button 
                 className="nav-link" 
                 onClick={handleFeaturesClick}
               >
                 Features
-              </Button>
+              </button>
               <NavLink to="/about" className="nav-link">
                 About
               </NavLink>
@@ -157,13 +156,12 @@ const Header = () => {
             ) : (
               // Mobile navigation for non-logged-in users
               <>
-                <Button
-                  variant="ghost"
+                <button
                   className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg text-left"
                   onClick={handleFeaturesClick}
                 >
                   Features
-                </Button>
+                </button>
                 <NavLink 
                   to="/about" 
                   className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
@@ -189,3 +187,4 @@ const Header = () => {
 };
 
 export default Header;
+
