@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+
+import React, { useEffect } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,26 +9,19 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
-  const location = useLocation();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-  
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      setShouldRedirect(true);
+      navigate('/sign-in');
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isSignedIn, isLoaded, navigate]);
 
   if (!isLoaded) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse bg-maronaut-100 p-4 rounded-md">Loading...</div>
-    </div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (shouldRedirect) {
-    return <Navigate to={`/sign-in?redirect=${encodeURIComponent(location.pathname)}`} replace />;
-  }
-
-  return <>{children}</>;
+  return isSignedIn ? <>{children}</> : null;
 };
 
 export default ProtectedRoute;

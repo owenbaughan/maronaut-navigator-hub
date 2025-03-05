@@ -1,29 +1,11 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SignIn as ClerkSignIn } from '@clerk/clerk-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { useAuth } from '../contexts/AuthContext';
 
 const SignIn = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isSignedIn, isLoaded } = useAuth();
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
-  
-  // Get redirect path from URL query params
-  const searchParams = new URLSearchParams(location.search);
-  const redirectPath = searchParams.get('redirect') || '/dashboard';
-  
-  // If user is already signed in, redirect them (only after Clerk has loaded)
-  useEffect(() => {
-    if (isLoaded && isSignedIn && !redirectAttempted) {
-      setRedirectAttempted(true);
-      navigate(redirectPath, { replace: true });
-    }
-  }, [isSignedIn, isLoaded, navigate, redirectPath, redirectAttempted]);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -34,8 +16,7 @@ const SignIn = () => {
               <h1 className="text-3xl font-bold text-maronaut-700 mb-6 text-center">Welcome Back</h1>
               <div className="mb-6">
                 <ClerkSignIn 
-                  signUpUrl={`/sign-up${location.search}`}
-                  redirectUrl={redirectPath}
+                  signUpUrl="/sign-up"
                   appearance={{
                     elements: {
                       rootBox: "w-full",
@@ -48,7 +29,7 @@ const SignIn = () => {
               </div>
               <div className="text-center">
                 <p className="text-maronaut-600">
-                  Don't have an account? <Link to={`/sign-up${location.search}`} className="text-maronaut-500 hover:text-maronaut-600 font-medium">Sign up</Link>
+                  Don't have an account? <Link to="/sign-up" className="text-maronaut-500 hover:text-maronaut-600 font-medium">Sign up</Link>
                 </p>
               </div>
             </div>
