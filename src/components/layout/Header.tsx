@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/clerk-react';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +45,19 @@ const Header = () => {
           <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
           <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
           <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
-          <NavLink to="/profile" className="btn-primary">My Profile</NavLink>
+          
+          {isSignedIn ? (
+            <UserButton afterSignOutUrl="/" />
+          ) : (
+            <div className="flex items-center space-x-4">
+              <SignInButton mode="modal">
+                <Button variant="outline">Sign In</Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button>Sign Up</Button>
+              </SignUpButton>
+            </div>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -93,13 +108,21 @@ const Header = () => {
             >
               Marketplace
             </NavLink>
-            <NavLink 
-              to="/profile" 
-              className="block py-2 px-4 bg-maronaut-500 text-white rounded-lg text-center"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              My Profile
-            </NavLink>
+            
+            {isSignedIn ? (
+              <div className="py-2 px-4">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-2">
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="w-full">Sign In</Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button className="w-full">Sign Up</Button>
+                </SignUpButton>
+              </div>
+            )}
           </div>
         </div>
       )}
