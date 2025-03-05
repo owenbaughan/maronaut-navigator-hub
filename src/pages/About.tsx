@@ -50,13 +50,13 @@ const About = () => {
                 <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <div className="aspect-square overflow-hidden rounded-xl mb-4">
                     <img 
-                      src="/lovable-uploads/34772c51-7e57-4aa5-a7a6-3c28b820245a.png" 
+                      src="/lovable-uploads/e9a79a88-6ff4-4b4e-b526-5f14758d1e99.png" 
                       alt="Owen Baughan" 
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <h3 className="text-xl font-semibold text-maronaut-700 mb-1">Owen Baughan</h3>
-                  <p className="text-maronaut-500 font-medium mb-3">Co-Founder & CEO</p>
+                  <p className="text-maronaut-500 font-medium mb-3">Co-Founder</p>
                   <p className="text-maronaut-600">
                     Owen combines his passion for sailing with his expertise in technology to lead Maronaut's 
                     vision of transforming the maritime experience. With a background in both nautical 
@@ -68,13 +68,13 @@ const About = () => {
                 <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                   <div className="aspect-square overflow-hidden rounded-xl mb-4">
                     <img 
-                      src="/lovable-uploads/e9a79a88-6ff4-4b4e-b526-5f14758d1e99.png" 
+                      src="/lovable-uploads/34772c51-7e57-4aa5-a7a6-3c28b820245a.png" 
                       alt="Robert Davis" 
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <h3 className="text-xl font-semibold text-maronaut-700 mb-1">Robert Davis</h3>
-                  <p className="text-maronaut-500 font-medium mb-3">Co-Founder & CTO</p>
+                  <p className="text-maronaut-500 font-medium mb-3">Co-Founder</p>
                   <p className="text-maronaut-600">
                     Robert brings extensive experience in maritime navigation systems and software engineering
                     to Maronaut. His innovative approach to solving complex technical challenges ensures that
