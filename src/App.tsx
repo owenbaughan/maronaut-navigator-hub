@@ -21,15 +21,18 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 const queryClient = new QueryClient();
 
 // Get the base URL from Vite's environment
-const BASE_URL = import.meta.env.BASE_URL;
+const BASE_URL = import.meta.env.BASE_URL || '/';
 
 const App = () => {
   const { isLoaded } = useAuth();
 
-  // Add console logs to debug base URL issues
+  // Enhanced debugging for GitHub Pages deployment
+  console.log("Environment:", import.meta.env.MODE);
   console.log("BASE_URL from env:", import.meta.env.BASE_URL);
+  console.log("Using BASE_URL:", BASE_URL);
   console.log("Current pathname:", window.location.pathname);
   console.log("Current URL:", window.location.href);
+  console.log("Document location:", document.location.href);
 
   // Don't render anything until Clerk is loaded
   if (!isLoaded) {

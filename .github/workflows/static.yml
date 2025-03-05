@@ -39,12 +39,23 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+      - name: Debug environment
+        run: |
+          echo "NODE_ENV: $NODE_ENV"
+          echo "BASE_URL: ${{ github.repository }}"
+          echo "Repository name: ${{ github.event.repository.name }}"
       - name: Build
         run: npm run build
         env:
           NODE_ENV: production
+          # Ensure the base URL is set correctly for GitHub Pages
+          VITE_BASE_URL: "/maronaut-navigator-hub/"
       - name: Debug build output
-        run: ls -la dist
+        run: |
+          echo "Build output contents:"
+          ls -la dist
+          echo "index.html content:"
+          cat dist/index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
