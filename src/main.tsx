@@ -6,11 +6,11 @@ import App from './App';
 import './index.css';
 
 // Get the publishable key from the environment
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPubKey = "pk_test_ZG9taW5hbnQtemVicmEtMjQuY2xlcmsuYWNjb3VudHMuZGV2JA";
 
 // Only render the app if we have the key
 if (!clerkPubKey) {
-  console.error("Missing VITE_CLERK_PUBLISHABLE_KEY environment variable");
+  console.error("Missing Clerk publishable key");
 }
 
 createRoot(document.getElementById("root")!).render(
