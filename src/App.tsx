@@ -11,6 +11,7 @@ import Reviews from "./pages/Reviews";
 import Marketplace from "./pages/Marketplace";
 import Profile from "./pages/Profile";
 import FriendsFeed from "./pages/FriendsFeed";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
