@@ -26,6 +26,11 @@ const BASE_URL = import.meta.env.BASE_URL;
 const App = () => {
   const { isLoaded } = useAuth();
 
+  // Add console logs to debug base URL issues
+  console.log("BASE_URL from env:", import.meta.env.BASE_URL);
+  console.log("Current pathname:", window.location.pathname);
+  console.log("Current URL:", window.location.href);
+
   // Don't render anything until Clerk is loaded
   if (!isLoaded) {
     return (
