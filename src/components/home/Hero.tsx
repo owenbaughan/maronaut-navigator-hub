@@ -2,8 +2,15 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 
-const Hero = () => {
+interface HeroProps {
+  handleFeatureClick: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, path: string) => void;
+}
+
+const Hero: React.FC<HeroProps> = ({ handleFeatureClick }) => {
+  const { isSignedIn } = useAuth();
+  
   const scrollToFeatures = () => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -35,10 +42,18 @@ const Hero = () => {
             Your complete companion for planning trips, tracking journeys, finding services and connecting with the sailing community.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in animate-delay-3">
-            <Link to="/trips" className="btn-primary">
+            <Link 
+              to="/trips" 
+              className="btn-primary"
+              onClick={(e) => handleFeatureClick(e, '/trips')}
+            >
               Plan Your Trip
             </Link>
-            <Link to="/dashboard" className="btn-secondary">
+            <Link 
+              to="/dashboard" 
+              className="btn-secondary"
+              onClick={(e) => handleFeatureClick(e, '/dashboard')}
+            >
               Explore Features
             </Link>
           </div>
