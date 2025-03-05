@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -11,25 +11,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) {
-        // Redirect to sign-in page with the return URL
-        navigate(`/sign-in?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
-      }
-      setIsChecking(false);
+    // Only redirect if Clerk has loaded AND user is not signed in
+    if (isLoaded && !isSignedIn) {
+      // Redirect to sign-in page with the return URL
+      navigate(`/sign-in?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
     }
   }, [isSignedIn, isLoaded, navigate, location.pathname]);
 
-  // Show loading state while Clerk is loading or we're checking auth
-  if (!isLoaded || isChecking) {
+  // Show loading state only while Clerk is loading
+  if (!isLoaded) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // Return children when authenticated
-  return <>{children}</>;
+  // If isLoaded is true and isSignedIn is null or false, we'll redirect in the useEffect
+  // If isLoaded is true and isSignedIn is true, we can render the children
+  return isSignedIn ? <>{children}</> : null;
 };
 
 export default ProtectedRoute;

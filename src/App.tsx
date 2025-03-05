@@ -17,21 +17,13 @@ import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
-import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { isLoaded } = useClerkAuth();
-
-  // Show loading state while Clerk is loading
-  if (!isLoaded) {
-    return <div className="min-h-screen flex items-center justify-center">Loading auth...</div>;
-  }
-
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public Routes - no protection */}
       <Route path="/" element={<Index />} />
       <Route path="/about" element={<About />} />
       <Route path="/sign-in" element={<SignIn />} />
