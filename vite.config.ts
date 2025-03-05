@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  base: "/maronaut-navigator-hub/", // Updated to include repository name for GitHub Pages
+  // Use conditional base path - empty for development, repo name for production
+  base: mode === 'production' ? "/maronaut-navigator-hub/" : "/",
   build: {
     // Ensure proper MIME types for assets
     assetsDir: 'assets',

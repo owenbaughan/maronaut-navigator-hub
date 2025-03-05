@@ -20,6 +20,9 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
+// Get the base URL from Vite's environment
+const BASE_URL = import.meta.env.MODE === 'production' ? '/maronaut-navigator-hub/' : '/';
+
 const App = () => {
   const { isLoaded } = useAuth();
 
@@ -37,7 +40,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter basename={BASE_URL}>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
