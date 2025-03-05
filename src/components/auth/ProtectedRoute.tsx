@@ -1,8 +1,7 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { toast } from "sonner";
+import { useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,22 +10,14 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) {
-        // Save the attempted URL for redirecting after login
-        const returnUrl = encodeURIComponent(location.pathname);
-        toast.info("Please sign in to access this feature");
-        navigate(`/sign-in?returnUrl=${returnUrl}`);
-      }
-      setIsChecking(false);
+    if (isLoaded && !isSignedIn) {
+      navigate('/sign-in');
     }
-  }, [isSignedIn, isLoaded, navigate, location]);
+  }, [isSignedIn, isLoaded, navigate]);
 
-  if (!isLoaded || isChecking) {
+  if (!isLoaded) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 

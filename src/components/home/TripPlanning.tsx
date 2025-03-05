@@ -3,11 +3,7 @@ import React from 'react';
 import { Anchor, Navigation, Wind, Waves, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface TripPlanningProps {
-  handleFeatureClick: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, path: string) => void;
-}
-
-const TripPlanning: React.FC<TripPlanningProps> = ({ handleFeatureClick }) => {
+const TripPlanning = () => {
   return (
     <section className="py-24 bg-white overflow-hidden">
       <div className="container mx-auto px-4">
@@ -66,11 +62,7 @@ const TripPlanning: React.FC<TripPlanningProps> = ({ handleFeatureClick }) => {
                 </div>
               </div>
               
-              <Link 
-                to="/trips" 
-                className="inline-flex items-center text-maronaut-500 font-medium hover:text-maronaut-600 transition-colors"
-                onClick={(e) => handleFeatureClick(e, '/trips')}
-              >
+              <Link to="/trips" className="inline-flex items-center text-maronaut-500 font-medium hover:text-maronaut-600 transition-colors">
                 Start Planning Your Trip <ArrowRight size={18} className="ml-2" />
               </Link>
             </div>

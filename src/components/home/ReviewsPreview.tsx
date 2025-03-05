@@ -3,18 +3,13 @@ import React from 'react';
 import { Star, MapPin, ChevronRight, ChevronLeft, Navigation, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface ReviewsPreviewProps {
-  handleFeatureClick: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, path: string) => void;
-}
-
-const ReviewCard = ({ name, location, rating, image, tags, reviewCount, handleFeatureClick }: { 
+const ReviewCard = ({ name, location, rating, image, tags, reviewCount }: { 
   name: string; 
   location: string; 
   rating: number; 
   image: string;
   tags: string[];
   reviewCount: number;
-  handleFeatureClick: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, path: string) => void;
 }) => {
   return (
     <div className="glass-panel p-6 flex flex-col h-full">
@@ -61,7 +56,6 @@ const ReviewCard = ({ name, location, rating, image, tags, reviewCount, handleFe
         <Link 
           to="/reviews" 
           className="text-maronaut-500 text-sm font-medium hover:text-maronaut-600 transition-colors flex items-center"
-          onClick={(e) => handleFeatureClick(e, '/reviews')}
         >
           View Details <ChevronRight size={16} className="ml-1" />
         </Link>
@@ -69,7 +63,6 @@ const ReviewCard = ({ name, location, rating, image, tags, reviewCount, handleFe
           to={`/trips?destination=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`} 
           className="text-maronaut-500 text-sm font-medium hover:text-maronaut-600 transition-colors flex items-center"
           title="Plan a trip to this location"
-          onClick={(e) => handleFeatureClick(e, `/trips?destination=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`)}
         >
           <Navigation size={16} className="mr-1" /> Plan
         </Link>
@@ -78,7 +71,7 @@ const ReviewCard = ({ name, location, rating, image, tags, reviewCount, handleFe
   );
 };
 
-const ReviewsPreview: React.FC<ReviewsPreviewProps> = ({ handleFeatureClick }) => {
+const ReviewsPreview = () => {
   const reviews = [
     {
       name: "Harbor Marina & Yacht Club",
@@ -124,7 +117,7 @@ const ReviewsPreview: React.FC<ReviewsPreviewProps> = ({ handleFeatureClick }) =
         <div className="relative">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
             {reviews.map((review, index) => (
-              <ReviewCard key={index} {...review} handleFeatureClick={handleFeatureClick} />
+              <ReviewCard key={index} {...review} />
             ))}
           </div>
           
@@ -142,11 +135,7 @@ const ReviewsPreview: React.FC<ReviewsPreviewProps> = ({ handleFeatureClick }) =
         </div>
         
         <div className="text-center mt-12">
-          <Link 
-            to="/reviews" 
-            className="btn-primary"
-            onClick={(e) => handleFeatureClick(e, '/reviews')}
-          >
+          <Link to="/reviews" className="btn-primary">
             Explore All Reviews
           </Link>
         </div>
