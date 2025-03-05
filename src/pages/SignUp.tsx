@@ -1,11 +1,26 @@
 
 import React from 'react';
-import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
-import { Link } from 'react-router-dom';
+import { SignUp as ClerkSignUp, useAuth } from '@clerk/clerk-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 
 const SignUp = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isSignedIn } = useAuth();
+  
+  // Get redirect path from URL query params
+  const searchParams = new URLSearchParams(location.search);
+  const redirectPath = searchParams.get('redirect') || '/dashboard';
+  
+  // If user is already signed in, redirect them
+  React.useEffect(() => {
+    if (isSignedIn) {
+      navigate(redirectPath, { replace: true });
+    }
+  }, [isSignedIn, navigate, redirectPath]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -16,7 +31,8 @@ const SignUp = () => {
               <h1 className="text-3xl font-bold text-maronaut-700 mb-6 text-center">Join Maronaut</h1>
               <div className="mb-6">
                 <ClerkSignUp 
-                  signInUrl="/sign-in"
+                  signInUrl={`/sign-in${location.search}`}
+                  redirectUrl={redirectPath}
                   appearance={{
                     elements: {
                       rootBox: "w-full",
@@ -29,7 +45,7 @@ const SignUp = () => {
               </div>
               <div className="text-center">
                 <p className="text-maronaut-600">
-                  Already have an account? <Link to="/sign-in" className="text-maronaut-500 hover:text-maronaut-600 font-medium">Sign in</Link>
+                  Already have an account? <Link to={`/sign-in${location.search}`} className="text-maronaut-500 hover:text-maronaut-600 font-medium">Sign in</Link>
                 </p>
               </div>
             </div>
