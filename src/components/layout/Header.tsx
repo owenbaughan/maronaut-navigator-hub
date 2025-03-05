@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Menu, X, Info, Layout } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,6 +9,8 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isSignedIn } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,10 +23,27 @@ const Header = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
-  const scrollToFeatures = () => {
-    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  const handleFeaturesClick = () => {
+    if (location.pathname !== '/') {
+      navigate('/', { state: { scrollToFeatures: true } });
+    } else {
+      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+    }
     setIsMenuOpen(false);
   };
+
+  // Effect to handle scrolling to features when navigating from another page
+  useEffect(() => {
+    if (location.state?.scrollToFeatures) {
+      // Small delay to ensure the component is fully mounted
+      const timer = setTimeout(() => {
+        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+        // Clear the state to avoid scrolling on future navigations
+        window.history.replaceState({}, document.title);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   return (
     <header 
@@ -60,14 +79,12 @@ const Header = () => {
             <>
               <Button 
                 variant="ghost" 
-                className="nav-link flex items-center gap-2" 
-                onClick={scrollToFeatures}
+                className="nav-link" 
+                onClick={handleFeaturesClick}
               >
-                <Layout size={18} />
                 Features
               </Button>
-              <NavLink to="/about" className="nav-link flex items-center gap-2">
-                <Info size={18} />
+              <NavLink to="/about" className="nav-link">
                 About
               </NavLink>
               <div className="flex items-center space-x-4">
@@ -142,18 +159,16 @@ const Header = () => {
               <>
                 <Button
                   variant="ghost"
-                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg text-left flex items-center gap-2"
-                  onClick={scrollToFeatures}
+                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg text-left"
+                  onClick={handleFeaturesClick}
                 >
-                  <Layout size={18} />
                   Features
                 </Button>
                 <NavLink 
                   to="/about" 
-                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg flex items-center gap-2"
+                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <Info size={18} />
                   About
                 </NavLink>
                 <div className="flex flex-col space-y-2">

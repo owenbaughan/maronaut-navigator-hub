@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Hero from '../components/home/Hero';
 import FeatureSection from '../components/home/FeatureSection';
 import TripPlanning from '../components/home/TripPlanning';
@@ -56,10 +57,22 @@ const FriendsFeedPreview = () => {
 };
 
 const Index = () => {
+  const location = useLocation();
+
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
-  }, []);
+
+    // Check if we should scroll to features section
+    if (location.state?.scrollToFeatures) {
+      const timer = setTimeout(() => {
+        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+        // Clear the state to avoid scrolling on future navigations
+        window.history.replaceState({}, document.title);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   return (
     <div className="min-h-screen flex flex-col">
