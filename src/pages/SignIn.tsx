@@ -1,25 +1,26 @@
 
 import React from 'react';
-import { SignIn as ClerkSignIn, useAuth } from '@clerk/clerk-react';
+import { SignIn as ClerkSignIn } from '@clerk/clerk-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import { useAuth } from '@clerk/clerk-react';
 
 const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   
   // Get redirect path from URL query params
   const searchParams = new URLSearchParams(location.search);
   const redirectPath = searchParams.get('redirect') || '/dashboard';
   
-  // If user is already signed in, redirect them
+  // If user is already signed in, redirect them (but only after Clerk has loaded)
   React.useEffect(() => {
-    if (isSignedIn) {
+    if (isLoaded && isSignedIn) {
       navigate(redirectPath, { replace: true });
     }
-  }, [isSignedIn, navigate, redirectPath]);
+  }, [isSignedIn, isLoaded, navigate, redirectPath]);
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -25,14 +25,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Render children immediately without waiting for auth state
+  // Create the context value
+  const contextValue = {
+    isSignedIn: !!isSignedIn, // Convert to boolean to avoid null
+    userId, 
+    isLoaded, 
+    requireAuth
+  };
+
+  // Always render children, regardless of auth state
   return (
-    <AuthContext.Provider value={{ 
-      isSignedIn: isSignedIn || false, 
-      userId, 
-      isLoaded, 
-      requireAuth 
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
