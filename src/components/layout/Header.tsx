@@ -1,11 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useAuth, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +20,14 @@ const Header = () => {
   }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  
+  const handleAuthButtonClick = () => {
+    if (isSignedIn) {
+      navigate('/profile');
+    } else {
+      navigate('/sign-in');
+    }
+  };
 
   return (
     <header 
@@ -37,12 +48,29 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
-          <NavLink to="/trips" className="nav-link">Trip Planning</NavLink>
-          <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
-          <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
-          <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
-          <NavLink to="/profile" className="btn-primary">My Profile</NavLink>
+          <NavLink to="/" className="nav-link">Home</NavLink>
+          <NavLink to="/about" className="nav-link">About</NavLink>
+          
+          <SignedIn>
+            <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
+            <NavLink to="/trips" className="nav-link">Trip Planning</NavLink>
+            <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
+            <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
+            <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
+            <div className="flex items-center space-x-2">
+              <NavLink to="/profile" className="nav-link">My Profile</NavLink>
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </SignedIn>
+          
+          <SignedOut>
+            <button 
+              onClick={() => navigate('/sign-in')} 
+              className="btn-primary"
+            >
+              Sign In
+            </button>
+          </SignedOut>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -59,47 +87,79 @@ const Header = () => {
         <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg border-t border-gray-100 animate-fade-in">
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
             <NavLink 
-              to="/dashboard" 
+              to="/" 
               className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
               onClick={() => setIsMenuOpen(false)}
             >
-              Dashboard
+              Home
             </NavLink>
             <NavLink 
-              to="/trips" 
+              to="/about" 
               className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
               onClick={() => setIsMenuOpen(false)}
             >
-              Trip Planning
+              About
             </NavLink>
-            <NavLink 
-              to="/friends" 
-              className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Friends Feed
-            </NavLink>
-            <NavLink 
-              to="/reviews" 
-              className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Reviews
-            </NavLink>
-            <NavLink 
-              to="/marketplace" 
-              className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Marketplace
-            </NavLink>
-            <NavLink 
-              to="/profile" 
-              className="block py-2 px-4 bg-maronaut-500 text-white rounded-lg text-center"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              My Profile
-            </NavLink>
+            
+            <SignedIn>
+              <NavLink 
+                to="/dashboard" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </NavLink>
+              <NavLink 
+                to="/trips" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Trip Planning
+              </NavLink>
+              <NavLink 
+                to="/friends" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Friends Feed
+              </NavLink>
+              <NavLink 
+                to="/reviews" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Reviews
+              </NavLink>
+              <NavLink 
+                to="/marketplace" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Marketplace
+              </NavLink>
+              <NavLink 
+                to="/profile" 
+                className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                My Profile
+              </NavLink>
+              <div className="px-4 py-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </SignedIn>
+            
+            <SignedOut>
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate('/sign-in');
+                }} 
+                className="block w-full py-2 px-4 bg-maronaut-500 text-white rounded-lg text-center"
+              >
+                Sign In
+              </button>
+            </SignedOut>
           </div>
         </div>
       )}
