@@ -50,6 +50,7 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-8">
           <NavLink to="/" className="nav-link">Home</NavLink>
           <NavLink to="/about" className="nav-link">About</NavLink>
+          <NavLink to="/contact" className="nav-link">Contact</NavLink>
           
           <SignedIn>
             <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
@@ -99,6 +100,13 @@ const Header = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               About
+            </NavLink>
+            <NavLink 
+              to="/contact" 
+              className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Contact
             </NavLink>
             
             <SignedIn>
