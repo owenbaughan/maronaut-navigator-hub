@@ -1,10 +1,10 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  isSignedIn: boolean | null;
+  isSignedIn: boolean;
   userId: string | null;
   isLoaded: boolean;
   requireAuth: () => void;
@@ -16,7 +16,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { isSignedIn, userId, isLoaded } = useClerkAuth();
   const navigate = useNavigate();
 
-  // Don't wait for auth initialization on public pages
+  // Function to redirect to login when needed (only called explicitly)
   const requireAuth = () => {
     if (isLoaded && !isSignedIn) {
       // Store current path for redirect after login
@@ -25,9 +25,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Render children immediately - let ProtectedRoute handle protected content
+  // Render children immediately without waiting for auth state
   return (
-    <AuthContext.Provider value={{ isSignedIn: isSignedIn || false, userId, isLoaded, requireAuth }}>
+    <AuthContext.Provider value={{ 
+      isSignedIn: isSignedIn || false, 
+      userId, 
+      isLoaded, 
+      requireAuth 
+    }}>
       {children}
     </AuthContext.Provider>
   );
