@@ -1,9 +1,11 @@
 
-name: Deploy to GitHub Pages
+# This workflow is being replaced by static.yml
+# Keeping this file for reference only
+
+name: Deploy to GitHub Pages (Legacy)
 
 on:
-  push:
-    branches: [ main ]
+  # This workflow will not run automatically
   workflow_dispatch:
 
 permissions:

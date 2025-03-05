@@ -9,9 +9,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  base: "./", // This is critical for GitHub Pages to correctly resolve relative paths
+  base: "./", // Critical for GitHub Pages to correctly resolve relative paths
   build: {
-    // Ensure proper MIME types
+    // Ensure proper MIME types for assets
     assetsDir: 'assets',
     rollupOptions: {
       output: {
