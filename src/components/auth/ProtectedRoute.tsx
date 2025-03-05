@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -10,18 +9,24 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth();
   const location = useLocation();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setShouldRedirect(true);
+    }
+  }, [isLoaded, isSignedIn]);
 
-  // Show loading state only while Clerk is loading
   if (!isLoaded) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse bg-maronaut-100 p-4 rounded-md">Loading...</div>
+    </div>;
   }
 
-  // If user is not signed in, redirect to sign-in page with the return URL
-  if (!isSignedIn) {
+  if (shouldRedirect) {
     return <Navigate to={`/sign-in?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  // User is authenticated, render the protected content
   return <>{children}</>;
 };
 

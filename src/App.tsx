@@ -20,6 +20,7 @@ import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
+// App Routes component
 const AppRoutes = () => {
   return (
     <Routes>

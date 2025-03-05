@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,15 +11,20 @@ interface AuthContextType {
   requireAuth: () => void;
 }
 
-// Create the context with undefined as initial value
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create the context with default values that won't cause flashing
+const AuthContext = createContext<AuthContextType>({
+  isSignedIn: false,
+  userId: null,
+  isLoaded: false,
+  requireAuth: () => {}
+});
 
 // AuthProvider component that will wrap our app
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSignedIn, userId, isLoaded } = useClerkAuth();
   const navigate = useNavigate();
 
-  // Function to redirect to login when needed (only called explicitly)
+  // Function to redirect to login when needed
   const requireAuth = () => {
     if (isLoaded && !isSignedIn) {
       // Store current path for redirect after login
@@ -36,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     requireAuth
   };
 
-  // Always render children, regardless of auth state
+  // Always render children, even before Clerk is loaded
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
@@ -47,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
