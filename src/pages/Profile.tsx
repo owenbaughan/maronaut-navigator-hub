@@ -1,10 +1,55 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useUser } from "@clerk/clerk-react";
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { Settings, Edit, MapPin, Ship, Activity, Award, Star, Bookmark, LogOut } from 'lucide-react';
+import ProfileEditDialog from '../components/profile/ProfileEditDialog';
+import { Button } from '@/components/ui/button';
+
+interface BoatDetails {
+  name: string;
+  type: string;
+  length: string;
+  homeMarina: string;
+}
 
 const Profile = () => {
+  const { user, isLoaded, isSignedIn } = useUser();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // State for user data
+  const [bio, setBio] = useState("");
+  const [boatDetails, setBoatDetails] = useState<BoatDetails>({
+    name: "",
+    type: "",
+    length: "",
+    homeMarina: "",
+  });
+  
+  // Load user data
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      // Load custom data from localStorage
+      const savedBio = localStorage.getItem("userBio");
+      if (savedBio) setBio(savedBio);
+      
+      const savedBoatDetails = localStorage.getItem("boatDetails");
+      if (savedBoatDetails) {
+        try {
+          setBoatDetails(JSON.parse(savedBoatDetails));
+        } catch (e) {
+          console.error("Failed to parse saved boat details", e);
+        }
+      }
+    }
+  }, [isLoaded, isSignedIn]);
+  
+  // Function to open edit dialog
+  const handleOpenEditDialog = () => {
+    setEditDialogOpen(true);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -13,38 +58,46 @@ const Profile = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
               <div className="glass-panel p-8 mb-8 relative animate-fade-in">
-                <button className="absolute top-6 right-6 p-2 rounded-full bg-maronaut-100 text-maronaut-600 hover:bg-maronaut-200 transition-colors">
+                <button 
+                  className="absolute top-6 right-6 p-2 rounded-full bg-maronaut-100 text-maronaut-600 hover:bg-maronaut-200 transition-colors"
+                  onClick={handleOpenEditDialog}
+                >
                   <Settings size={20} />
                 </button>
                 
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className="relative">
                     <img 
-                      src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
+                      src={user?.imageUrl || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"} 
                       alt="Profile" 
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                     />
-                    <button className="absolute bottom-0 right-0 p-2 rounded-full bg-maronaut-500 text-white hover:bg-maronaut-600 transition-colors">
+                    <button 
+                      className="absolute bottom-0 right-0 p-2 rounded-full bg-maronaut-500 text-white hover:bg-maronaut-600 transition-colors"
+                      onClick={handleOpenEditDialog}
+                    >
                       <Edit size={16} />
                     </button>
                   </div>
                   
                   <div className="text-center md:text-left flex-1">
                     <h1 className="text-2xl md:text-3xl font-bold text-maronaut-700 mb-2">
-                      Captain Alex Morgan
+                      {user?.fullName || "Captain Alex Morgan"}
                     </h1>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4 text-maronaut-600 mb-4">
-                      <div className="flex items-center">
-                        <MapPin size={16} className="mr-1" />
-                        San Francisco, CA
-                      </div>
+                      {(user?.publicMetadata?.location as string || 'San Francisco, CA') && (
+                        <div className="flex items-center">
+                          <MapPin size={16} className="mr-1" />
+                          {user?.publicMetadata?.location as string || 'San Francisco, CA'}
+                        </div>
+                      )}
                       <div className="flex items-center">
                         <Ship size={16} className="mr-1" />
                         Sailing since 2015
                       </div>
                     </div>
                     <p className="text-maronaut-600/80 max-w-xl">
-                      Passionate sailor exploring the waters of the West Coast. Interested in long-distance cruising and racing. Always looking for new destinations and sailing buddies.
+                      {bio || "Passionate sailor exploring the waters of the West Coast. Interested in long-distance cruising and racing. Always looking for new destinations and sailing buddies."}
                     </p>
                   </div>
                 </div>
@@ -200,34 +253,42 @@ const Profile = () => {
                     <div className="space-y-3">
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Boat Name</h3>
-                        <p className="text-maronaut-700">Sea Whisper</p>
+                        <p className="text-maronaut-700">{boatDetails.name || "Sea Whisper"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Type</h3>
-                        <p className="text-maronaut-700">Beneteau Oceanis 38</p>
+                        <p className="text-maronaut-700">{boatDetails.type || "Beneteau Oceanis 38"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Length</h3>
-                        <p className="text-maronaut-700">38 ft</p>
+                        <p className="text-maronaut-700">{boatDetails.length || "38 ft"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Home Marina</h3>
-                        <p className="text-maronaut-700">South Beach Harbor, San Francisco</p>
+                        <p className="text-maronaut-700">{boatDetails.homeMarina || "South Beach Harbor, San Francisco"}</p>
                       </div>
                     </div>
                     
-                    <button className="w-full mt-4 py-2 text-center text-maronaut-500 hover:text-maronaut-600 font-medium border-t border-maronaut-100">
+                    <Button 
+                      variant="ghost"
+                      className="w-full mt-4 py-2 text-center text-maronaut-500 hover:text-maronaut-600 font-medium border-t border-maronaut-100"
+                      onClick={handleOpenEditDialog}
+                    >
                       Edit Boat Details
-                    </button>
+                    </Button>
                   </div>
                   
-                  <button className="w-full p-3 text-center flex items-center justify-center text-red-500 hover:text-red-600 font-medium glass-panel animate-fade-in animate-delay-5">
+                  <Button 
+                    variant="ghost"
+                    className="w-full p-3 text-center flex items-center justify-center text-red-500 hover:text-red-600 font-medium glass-panel animate-fade-in animate-delay-5"
+                    onClick={() => window.location.href = "/user/sign-out"}
+                  >
                     <LogOut size={18} className="mr-2" />
                     Sign Out
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -235,6 +296,9 @@ const Profile = () => {
         </section>
       </main>
       <Footer />
+      
+      {/* Profile Edit Dialog */}
+      <ProfileEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} />
     </div>
   );
 };
