@@ -6,11 +6,10 @@ import { toast } from '../../components/ui/use-toast';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 
-// Enhanced mock user data with emails and usernames
+// Enhanced mock user data with emails and usernames (representing Clerk users)
 const MOCK_USERS = [
   {
     id: 201,
-    name: 'Jessica Torres',
     username: 'jesst',
     email: 'jessica.torres@example.com',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
@@ -19,7 +18,6 @@ const MOCK_USERS = [
   },
   {
     id: 202,
-    name: 'Robert Chen',
     username: 'robchen',
     email: 'robert.chen@example.com',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
@@ -28,7 +26,6 @@ const MOCK_USERS = [
   },
   {
     id: 203,
-    name: 'Maria Garcia',
     username: 'mariag',
     email: 'maria.garcia@example.com',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
@@ -37,7 +34,6 @@ const MOCK_USERS = [
   },
   {
     id: 204,
-    name: 'David Wilson',
     username: 'dwilson',
     email: 'david.wilson@example.com',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
@@ -48,7 +44,7 @@ const MOCK_USERS = [
 
 const FriendSearch = () => {
   const { user, isSignedIn } = useUser();
-  const [searchType, setSearchType] = useState('name'); // 'name', 'email', or 'username'
+  const [searchType, setSearchType] = useState('email'); // 'email' or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -70,9 +66,7 @@ const FriendSearch = () => {
         case 'username':
           return mockUser.username.toLowerCase().includes(query);
         default:
-          // Default to name search
-          return mockUser.name.toLowerCase().includes(query) || 
-                 mockUser.location.toLowerCase().includes(query);
+          return false;
       }
     });
     
@@ -110,14 +104,6 @@ const FriendSearch = () => {
       <form onSubmit={handleSearch} className="mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex gap-2">
-            <Button 
-              type="button" 
-              variant={searchType === 'name' ? 'default' : 'outline'}
-              className="text-sm flex-1"
-              onClick={() => setSearchType('name')}
-            >
-              Name
-            </Button>
             <Button 
               type="button" 
               variant={searchType === 'email' ? 'default' : 'outline'}
@@ -164,12 +150,12 @@ const FriendSearch = () => {
               <div className="flex items-center">
                 <img
                   src={user.avatar}
-                  alt={user.name}
+                  alt={user.username}
                   className="w-12 h-12 rounded-full object-cover border-2 border-white"
                 />
                 <div className="ml-3">
-                  <h3 className="font-semibold text-maronaut-700">{user.name}</h3>
-                  <p className="text-sm text-maronaut-500">@{user.username}</p>
+                  <h3 className="font-semibold text-maronaut-700">@{user.username}</h3>
+                  <p className="text-sm text-maronaut-500">{user.email}</p>
                   <p className="text-sm text-maronaut-500">{user.location}</p>
                   {user.mutualFriends > 0 && (
                     <p className="text-xs text-maronaut-400">
