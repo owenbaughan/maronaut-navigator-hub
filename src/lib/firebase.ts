@@ -1,6 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 import { 
   getAuth, 
   createUserWithEmailAndPassword,
@@ -13,23 +14,26 @@ import {
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBq9dhLAa2l7KMRZe8zUaW7V3QqM7sTw2Y",
-  authDomain: "maronaut-sailing-app.firebaseapp.com",
-  projectId: "maronaut-sailing-app",
-  storageBucket: "maronaut-sailing-app.appspot.com",
-  messagingSenderId: "846712718933",
-  appId: "1:846712718933:web:9a7a15f8df9f44f01a7b35"
+  apiKey: "AIzaSyAAbWsq2c3qS47ytgA-x_DPvEOpjy5402g",
+  authDomain: "maronuat.firebaseapp.com",
+  projectId: "maronuat",
+  storageBucket: "maronuat.firebasestorage.app",
+  messagingSenderId: "927440294332",
+  appId: "1:927440294332:web:5f9f7d3a00efa245c01bb9",
+  measurementId: "G-9CWPQ39QL9"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const analytics = getAnalytics(app);
 
 export { 
   app, 
   db, 
   auth,
+  analytics,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
