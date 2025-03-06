@@ -1,13 +1,18 @@
 
 import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
 import { toast } from '../../components/ui/use-toast';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
-// Mock search results
+// Enhanced mock user data with emails and usernames
 const MOCK_USERS = [
   {
     id: 201,
     name: 'Jessica Torres',
+    username: 'jesst',
+    email: 'jessica.torres@example.com',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
     location: 'Marina del Rey, CA',
     mutualFriends: 3,
@@ -15,6 +20,8 @@ const MOCK_USERS = [
   {
     id: 202,
     name: 'Robert Chen',
+    username: 'robchen',
+    email: 'robert.chen@example.com',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
     location: 'Seattle, WA',
     mutualFriends: 1,
@@ -22,6 +29,8 @@ const MOCK_USERS = [
   {
     id: 203,
     name: 'Maria Garcia',
+    username: 'mariag',
+    email: 'maria.garcia@example.com',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
     location: 'San Diego, CA',
     mutualFriends: 5,
@@ -29,6 +38,8 @@ const MOCK_USERS = [
   {
     id: 204,
     name: 'David Wilson',
+    username: 'dwilson',
+    email: 'david.wilson@example.com',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
     location: 'Portland, OR',
     mutualFriends: 0,
@@ -36,6 +47,8 @@ const MOCK_USERS = [
 ];
 
 const FriendSearch = () => {
+  const { user, isSignedIn } = useUser();
+  const [searchType, setSearchType] = useState('name'); // 'name', 'email', or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -47,11 +60,21 @@ const FriendSearch = () => {
       return;
     }
     
-    // Simulate search with mock data
-    const filtered = MOCK_USERS.filter(user => 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.location.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Simulate search with mock data based on search type
+    const filtered = MOCK_USERS.filter(mockUser => {
+      const query = searchQuery.toLowerCase();
+      
+      switch(searchType) {
+        case 'email':
+          return mockUser.email.toLowerCase().includes(query);
+        case 'username':
+          return mockUser.username.toLowerCase().includes(query);
+        default:
+          // Default to name search
+          return mockUser.name.toLowerCase().includes(query) || 
+                 mockUser.location.toLowerCase().includes(query);
+      }
+    });
     
     setSearchResults(filtered);
   };
@@ -65,30 +88,72 @@ const FriendSearch = () => {
     });
   };
   
+  if (!isSignedIn) {
+    return (
+      <div className="glass-panel p-6 animate-fade-in">
+        <h2 className="text-xl font-semibold text-maronaut-700 mb-4">
+          Sign In to Find Friends
+        </h2>
+        <p className="text-maronaut-600">
+          You need to be signed in to search for and add friends. Please sign in to continue.
+        </p>
+      </div>
+    );
+  }
+  
   return (
     <div className="glass-panel p-6 animate-fade-in">
       <h2 className="text-xl font-semibold text-maronaut-700 mb-4">
         Find Friends
       </h2>
       
-      <form onSubmit={handleSearch} className="mb-6">
+      <form onSubmit={handleSearch} className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-2">
+            <Button 
+              type="button" 
+              variant={searchType === 'name' ? 'default' : 'outline'}
+              className="text-sm flex-1"
+              onClick={() => setSearchType('name')}
+            >
+              Name
+            </Button>
+            <Button 
+              type="button" 
+              variant={searchType === 'email' ? 'default' : 'outline'}
+              className="text-sm flex-1"
+              onClick={() => setSearchType('email')}
+            >
+              Email
+            </Button>
+            <Button 
+              type="button" 
+              variant={searchType === 'username' ? 'default' : 'outline'}
+              className="text-sm flex-1"
+              onClick={() => setSearchType('username')}
+            >
+              Username
+            </Button>
+          </div>
+        </div>
+        
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={18} className="text-maronaut-400" />
           </div>
-          <input
+          <Input
             type="text"
-            className="block w-full pl-10 pr-4 py-3 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
-            placeholder="Search by name or location..."
+            className="pl-10 pr-4 py-3 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+            placeholder={`Search by ${searchType}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button
+          <Button
             type="submit"
             className="absolute inset-y-0 right-0 px-4 bg-maronaut-500 text-white rounded-r-lg hover:bg-maronaut-600 transition-colors"
           >
             Search
-          </button>
+          </Button>
         </div>
       </form>
       
@@ -104,6 +169,7 @@ const FriendSearch = () => {
                 />
                 <div className="ml-3">
                   <h3 className="font-semibold text-maronaut-700">{user.name}</h3>
+                  <p className="text-sm text-maronaut-500">@{user.username}</p>
                   <p className="text-sm text-maronaut-500">{user.location}</p>
                   {user.mutualFriends > 0 && (
                     <p className="text-xs text-maronaut-400">
@@ -114,20 +180,21 @@ const FriendSearch = () => {
               </div>
               
               {pendingRequests.includes(user.id) ? (
-                <button
-                  className="px-3 py-1.5 border border-maronaut-200 rounded-lg text-maronaut-400 cursor-default"
+                <Button
+                  className="px-3 py-1.5"
+                  variant="outline"
                   disabled
                 >
                   Requested
-                </button>
+                </Button>
               ) : (
-                <button
-                  className="px-3 py-1.5 bg-maronaut-500 text-white rounded-lg flex items-center hover:bg-maronaut-600 transition-colors"
+                <Button
+                  className="px-3 py-1.5"
                   onClick={() => handleAddFriend(user.id)}
                 >
                   <UserPlus size={16} className="mr-1" />
                   Add Friend
-                </button>
+                </Button>
               )}
             </div>
           ))}
