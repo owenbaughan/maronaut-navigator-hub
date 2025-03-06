@@ -6,13 +6,7 @@ import Footer from '../components/layout/Footer';
 import { Settings, Edit, MapPin, Ship, Activity, Award, Star, Bookmark, LogOut } from 'lucide-react';
 import ProfileEditDialog from '../components/profile/ProfileEditDialog';
 import { Button } from '@/components/ui/button';
-
-interface BoatDetails {
-  name: string;
-  type: string;
-  length: string;
-  homeMarina: string;
-}
+import { getUserProfile, BoatDetails } from '@/services/profileService';
 
 const Profile = () => {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -20,6 +14,7 @@ const Profile = () => {
   
   // State for user data
   const [bio, setBio] = useState("");
+  const [location, setLocation] = useState("");
   const [boatDetails, setBoatDetails] = useState<BoatDetails>({
     name: "",
     type: "",
@@ -29,21 +24,29 @@ const Profile = () => {
   
   // Load user data
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      // Load custom data from localStorage
-      const savedBio = localStorage.getItem("userBio");
-      if (savedBio) setBio(savedBio);
-      
-      const savedBoatDetails = localStorage.getItem("boatDetails");
-      if (savedBoatDetails) {
+    if (isLoaded && isSignedIn && user) {
+      // Load profile data from Firebase
+      const loadProfileData = async () => {
         try {
-          setBoatDetails(JSON.parse(savedBoatDetails));
-        } catch (e) {
-          console.error("Failed to parse saved boat details", e);
+          const profile = await getUserProfile(user.id);
+          if (profile) {
+            setBio(profile.bio || "");
+            setLocation(profile.location || "");
+            setBoatDetails(profile.boatDetails || {
+              name: "",
+              type: "",
+              length: "",
+              homeMarina: "",
+            });
+          }
+        } catch (error) {
+          console.error("Error loading profile data:", error);
         }
-      }
+      };
+      
+      loadProfileData();
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, user]);
   
   // Function to open edit dialog
   const handleOpenEditDialog = () => {

@@ -15,17 +15,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { getUserProfile, saveUserProfile, BoatDetails } from "@/services/profileService";
 
 interface ProfileEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-interface BoatDetails {
-  name: string;
-  type: string;
-  length: string;
-  homeMarina: string;
 }
 
 const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
@@ -36,7 +30,7 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
   const [name, setName] = React.useState("");
   const [location, setLocation] = React.useState("");
   
-  // For custom data (to be stored in database later)
+  // For custom data (to be stored in Firebase)
   const [bio, setBio] = React.useState("");
   const [boatDetails, setBoatDetails] = React.useState<BoatDetails>({
     name: "",
@@ -50,23 +44,33 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
     if (isLoaded && user && open) {
       setName(user.fullName || "");
       
-      // Try to get location from user metadata if available
-      const locationFromMetadata = user.publicMetadata?.location as string;
-      setLocation(locationFromMetadata || "");
-      
-      // Retrieve other fields from localStorage as temporary storage
-      // These would come from a database in a full implementation
-      const savedBio = localStorage.getItem("userBio");
-      if (savedBio) setBio(savedBio);
-      
-      const savedBoatDetails = localStorage.getItem("boatDetails");
-      if (savedBoatDetails) {
+      // Load profile data from Firebase
+      const loadProfileData = async () => {
         try {
-          setBoatDetails(JSON.parse(savedBoatDetails));
-        } catch (e) {
-          console.error("Failed to parse saved boat details", e);
+          if (user.id) {
+            const profile = await getUserProfile(user.id);
+            if (profile) {
+              setLocation(profile.location || "");
+              setBio(profile.bio || "");
+              setBoatDetails(profile.boatDetails || {
+                name: "",
+                type: "",
+                length: "",
+                homeMarina: "",
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error loading profile data:", error);
+          toast({
+            title: "Error loading profile",
+            description: "There was a problem loading your profile data.",
+            variant: "destructive",
+          });
         }
-      }
+      };
+      
+      loadProfileData();
     }
   }, [isLoaded, user, open]);
   
@@ -79,16 +83,21 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
       await user.update({
         firstName: name.split(" ")[0],
         lastName: name.split(" ").slice(1).join(" "),
-        publicMetadata: {
-          ...user.publicMetadata,
-          location,
-        },
       });
       
-      // Save custom data to localStorage for now
-      // In a real app, this would be saved to a database
-      localStorage.setItem("userBio", bio);
-      localStorage.setItem("boatDetails", JSON.stringify(boatDetails));
+      // Save custom data to Firebase
+      if (user.id) {
+        await saveUserProfile({
+          userId: user.id,
+          name,
+          location,
+          bio,
+          boatDetails,
+          email: user.primaryEmailAddress?.emailAddress,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
       
       toast({
         title: "Profile updated",
