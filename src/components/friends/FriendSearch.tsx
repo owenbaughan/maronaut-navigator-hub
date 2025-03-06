@@ -1,76 +1,67 @@
-
 import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import { toast } from '../../components/ui/use-toast';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 
-// Enhanced mock user data with emails and usernames (representing Clerk users)
-const MOCK_USERS = [
-  {
-    id: 201,
-    username: 'jesst',
-    email: 'jessica.torres@example.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-    location: 'Marina del Rey, CA',
-    mutualFriends: 3,
-  },
-  {
-    id: 202,
-    username: 'robchen',
-    email: 'robert.chen@example.com',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-    location: 'Seattle, WA',
-    mutualFriends: 1,
-  },
-  {
-    id: 203,
-    username: 'mariag',
-    email: 'maria.garcia@example.com',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-    location: 'San Diego, CA',
-    mutualFriends: 5,
-  },
-  {
-    id: 204,
-    username: 'dwilson',
-    email: 'david.wilson@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-    location: 'Portland, OR',
-    mutualFriends: 0,
-  },
-];
-
 const FriendSearch = () => {
   const { user, isSignedIn } = useUser();
+  const { users } = useClerk();
   const [searchType, setSearchType] = useState('email'); // 'email' or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (searchQuery.trim() === '') {
       setSearchResults([]);
       return;
     }
     
-    // Simulate search with mock data based on search type
-    const filtered = MOCK_USERS.filter(mockUser => {
-      const query = searchQuery.toLowerCase();
-      
-      switch(searchType) {
-        case 'email':
-          return mockUser.email.toLowerCase().includes(query);
-        case 'username':
-          return mockUser.username.toLowerCase().includes(query);
-        default:
-          return false;
-      }
-    });
+    setIsSearching(true);
     
-    setSearchResults(filtered);
+    try {
+      const clerkUsers = await users.getUserList();
+      
+      const query = searchQuery.toLowerCase();
+      const filtered = clerkUsers
+        .filter(clerkUser => {
+          if (clerkUser.id === user.id) return false;
+          
+          switch(searchType) {
+            case 'email':
+              const userEmail = clerkUser.primaryEmailAddress?.emailAddress || 
+                               (clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress);
+              return userEmail?.toLowerCase().includes(query);
+            case 'username':
+              return clerkUser.username?.toLowerCase().includes(query);
+            default:
+              return false;
+          }
+        })
+        .map(clerkUser => ({
+          id: clerkUser.id,
+          username: clerkUser.username || 'No username',
+          email: clerkUser.primaryEmailAddress?.emailAddress || 'No email',
+          avatar: clerkUser.imageUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+          location: 'Location not available',
+          mutualFriends: 0
+        }));
+      
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error('Error searching for users:', error);
+      toast({
+        title: "Search error",
+        description: "There was an error searching for users. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
   
   const handleAddFriend = (userId) => {
@@ -137,8 +128,9 @@ const FriendSearch = () => {
           <Button
             type="submit"
             className="absolute inset-y-0 right-0 px-4 bg-maronaut-500 text-white rounded-r-lg hover:bg-maronaut-600 transition-colors"
+            disabled={isSearching}
           >
-            Search
+            {isSearching ? 'Searching...' : 'Search'}
           </Button>
         </div>
       </form>
@@ -185,7 +177,7 @@ const FriendSearch = () => {
             </div>
           ))}
         </div>
-      ) : searchQuery !== '' ? (
+      ) : searchQuery !== '' && !isSearching ? (
         <div className="text-center py-8 text-maronaut-500">
           No users found matching "{searchQuery}"
         </div>
