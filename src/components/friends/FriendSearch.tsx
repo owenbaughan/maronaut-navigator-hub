@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
@@ -7,7 +8,7 @@ import { Button } from '../ui/button';
 
 const FriendSearch = () => {
   const { user, isSignedIn } = useUser();
-  const { users } = useClerk();
+  const clerk = useClerk();
   const [searchType, setSearchType] = useState('email'); // 'email' or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -24,24 +25,26 @@ const FriendSearch = () => {
     setIsSearching(true);
     
     try {
-      const clerkUsers = await users.getUserList();
+      // Use the appropriate search endpoint based on the search type
+      let userList = [];
       
-      const query = searchQuery.toLowerCase();
-      const filtered = clerkUsers
-        .filter(clerkUser => {
-          if (clerkUser.id === user.id) return false;
-          
-          switch(searchType) {
-            case 'email':
-              const userEmail = clerkUser.primaryEmailAddress?.emailAddress || 
-                               (clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress);
-              return userEmail?.toLowerCase().includes(query);
-            case 'username':
-              return clerkUser.username?.toLowerCase().includes(query);
-            default:
-              return false;
-          }
-        })
+      if (searchType === 'email') {
+        // Search for users by email
+        userList = await clerk.users.getUserList({
+          emailAddress: searchQuery.toLowerCase(),
+          limit: 10,
+        });
+      } else if (searchType === 'username') {
+        // Search for users by username
+        userList = await clerk.users.getUserList({
+          username: searchQuery.toLowerCase(),
+          limit: 10,
+        });
+      }
+      
+      // Filter out the current user
+      const filtered = userList
+        .filter(clerkUser => clerkUser.id !== user?.id)
         .map(clerkUser => ({
           id: clerkUser.id,
           username: clerkUser.username || 'No username',
@@ -52,6 +55,14 @@ const FriendSearch = () => {
         }));
       
       setSearchResults(filtered);
+      
+      if (filtered.length === 0) {
+        toast({
+          title: "No users found",
+          description: `No users found matching "${searchQuery}" in ${searchType}.`,
+          variant: "default"
+        });
+      }
     } catch (error) {
       console.error('Error searching for users:', error);
       toast({
