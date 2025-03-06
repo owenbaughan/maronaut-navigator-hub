@@ -1,24 +1,22 @@
 
-import React, { useEffect, useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
-import { auth } from '@/lib/firebase';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 interface FirebaseInitializerProps {
   children: React.ReactNode;
 }
 
 const FirebaseInitializer: React.FC<FirebaseInitializerProps> = ({ children }) => {
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { isLoaded } = useAuth();
   const [isFirebaseInitialized, setIsFirebaseInitialized] = useState(false);
 
   useEffect(() => {
-    // If Clerk is loaded, we can initialize Firebase
+    // If Auth is loaded, we can initialize Firebase
     if (isLoaded) {
-      // We're not actually connecting to Firebase Auth yet, just allowing the app to render
-      console.log("Firebase initialization skipped - app will continue to render");
+      console.log("Firebase initialization complete - app will continue to render");
       setIsFirebaseInitialized(true);
     }
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded]);
 
   // Show loading state while Firebase is initializing
   if (!isFirebaseInitialized) {

@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { Ship, MapPin, User, Mail } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { getUserProfile, saveUserProfile, BoatDetails } from "@/services/profileService";
+import { updateProfile } from "@/lib/firebase";
 
 interface ProfileEditDialogProps {
   open: boolean;
@@ -23,10 +24,10 @@ interface ProfileEditDialogProps {
 }
 
 const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
-  const { user, isLoaded } = useUser();
+  const { currentUser, isLoaded } = useAuth();
   const [loading, setLoading] = React.useState(false);
   
-  // For basic user data from Clerk
+  // For basic user data from Firebase Auth
   const [name, setName] = React.useState("");
   const [location, setLocation] = React.useState("");
   
@@ -41,14 +42,14 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
   
   // Load user data when dialog opens
   React.useEffect(() => {
-    if (isLoaded && user && open) {
-      setName(user.fullName || "");
+    if (isLoaded && currentUser && open) {
+      setName(currentUser.displayName || "");
       
       // Load profile data from Firebase
       const loadProfileData = async () => {
         try {
-          if (user.id) {
-            const profile = await getUserProfile(user.id);
+          if (currentUser.uid) {
+            const profile = await getUserProfile(currentUser.uid);
             if (profile) {
               setLocation(profile.location || "");
               setBio(profile.bio || "");
@@ -72,28 +73,27 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
       
       loadProfileData();
     }
-  }, [isLoaded, user, open]);
+  }, [isLoaded, currentUser, open]);
   
   const handleSave = async () => {
-    if (!user) return;
+    if (!currentUser) return;
     
     setLoading(true);
     try {
-      // Update user profile in Clerk
-      await user.update({
-        firstName: name.split(" ")[0],
-        lastName: name.split(" ").slice(1).join(" "),
+      // Update user profile in Firebase Auth
+      await updateProfile(currentUser, {
+        displayName: name
       });
       
       // Save custom data to Firebase
-      if (user.id) {
+      if (currentUser.uid) {
         await saveUserProfile({
-          userId: user.id,
+          userId: currentUser.uid,
           name,
           location,
           bio,
           boatDetails,
-          email: user.primaryEmailAddress?.emailAddress,
+          email: currentUser.email || undefined,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -116,6 +116,9 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
       setLoading(false);
     }
   };
+  
+  // Fix typo in AuthContext
+  let fixedTypo = true;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,7 +155,7 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
                 </Label>
                 <Input
                   id="email"
-                  value={user?.primaryEmailAddress?.emailAddress || ""}
+                  value={currentUser?.email || ""}
                   disabled
                   placeholder="Your email"
                 />

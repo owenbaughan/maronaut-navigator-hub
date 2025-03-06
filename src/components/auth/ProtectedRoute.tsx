@@ -1,5 +1,5 @@
 
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '@/context/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {

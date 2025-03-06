@@ -1,14 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/clerk-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isSignedIn } = useAuth();
+  const { currentUser, isSignedIn, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,6 +41,15 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   // Effect to handle scrolling to features when navigating from another page
   useEffect(() => {
     if (location.state?.scrollToFeatures) {
@@ -44,6 +62,19 @@ const Header = () => {
       return () => clearTimeout(timer);
     }
   }, [location.state]);
+
+  // Get initials for avatar
+  const getUserInitials = () => {
+    if (currentUser?.displayName) {
+      return currentUser.displayName
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    return 'U';
+  };
 
   return (
     <header 
@@ -72,7 +103,28 @@ const Header = () => {
               <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
               <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
               <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
-              <UserButton afterSignOutUrl="/" />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             // Navigation for non-logged-in users
@@ -87,12 +139,12 @@ const Header = () => {
                 About
               </NavLink>
               <div className="flex items-center space-x-4">
-                <SignInButton mode="modal">
-                  <Button variant="outline">Sign In</Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button>Sign Up</Button>
-                </SignUpButton>
+                <Button variant="outline" onClick={() => navigate('/signin')}>
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate('/signup')}>
+                  Sign Up
+                </Button>
               </div>
             </>
           )}
@@ -149,9 +201,22 @@ const Header = () => {
                 >
                   Marketplace
                 </NavLink>
-                <div className="py-2 px-4">
-                  <UserButton afterSignOutUrl="/" />
-                </div>
+                <NavLink 
+                  to="/profile" 
+                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Profile
+                </NavLink>
+                <button
+                  className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg text-left"
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Log out
+                </button>
               </>
             ) : (
               // Mobile navigation for non-logged-in users
@@ -170,12 +235,25 @@ const Header = () => {
                   About
                 </NavLink>
                 <div className="flex flex-col space-y-2">
-                  <SignInButton mode="modal">
-                    <Button variant="outline" className="w-full">Sign In</Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button className="w-full">Sign Up</Button>
-                  </SignUpButton>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      navigate('/signin');
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      navigate('/signup');
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    Sign Up
+                  </Button>
                 </div>
               </>
             )}
@@ -187,4 +265,3 @@ const Header = () => {
 };
 
 export default Header;
-
