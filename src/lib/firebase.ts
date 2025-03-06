@@ -1,9 +1,9 @@
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, signInWithCustomToken } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBq9dhLAa2l7KMRZe8zUaW7V3QqM7sTw2Y",
   authDomain: "maronaut-sailing-app.firebaseapp.com",
@@ -18,4 +18,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { app, db, auth, signInWithCustomToken };
+export { app, db, auth };
