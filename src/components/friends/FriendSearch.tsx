@@ -28,24 +28,24 @@ const FriendSearch = () => {
       // Use the appropriate search endpoint based on the search type
       let userList = [];
       
-      // Fixed: The client object doesn't have a direct users property
-      // We need to access the users endpoint correctly
       if (searchType === 'email') {
         // Search for users by email
-        userList = await client.users.listUsers({
+        const response = await client.users.getUserList({
           emailAddress: [searchQuery.toLowerCase()],
           limit: 10,
         });
+        userList = response.data || [];
       } else if (searchType === 'username') {
         // Search for users by username
-        userList = await client.users.listUsers({
+        const response = await client.users.getUserList({
           username: [searchQuery.toLowerCase()],
           limit: 10,
         });
+        userList = response.data || [];
       }
       
       // Filter out the current user
-      const filtered = userList.data
+      const filtered = userList
         .filter(clerkUser => clerkUser.id !== user?.id)
         .map(clerkUser => ({
           id: clerkUser.id,
