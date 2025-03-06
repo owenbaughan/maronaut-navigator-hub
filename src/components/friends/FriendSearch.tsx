@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 
 const FriendSearch = () => {
   const { user, isSignedIn } = useUser();
-  const clerk = useClerk();
+  const { client } = useClerk();
   const [searchType, setSearchType] = useState('email'); // 'email' or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -30,13 +30,13 @@ const FriendSearch = () => {
       
       if (searchType === 'email') {
         // Search for users by email
-        userList = await clerk.users.getUserList({
+        userList = await client.users.getUserList({
           emailAddress: searchQuery.toLowerCase(),
           limit: 10,
         });
       } else if (searchType === 'username') {
         // Search for users by username
-        userList = await clerk.users.getUserList({
+        userList = await client.users.getUserList({
           username: searchQuery.toLowerCase(),
           limit: 10,
         });

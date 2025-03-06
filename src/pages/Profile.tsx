@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { Activity, Award, Star, Bookmark, LogOut } from 'lucide-react';
+import { Activity, Award, Star, Bookmark, LogOut, Ship } from 'lucide-react';
 import EditProfileForm from '../components/profile/EditProfileForm';
 import ProfileDisplay from '../components/profile/ProfileDisplay';
 import BoatDetails from '../components/profile/BoatDetails';
