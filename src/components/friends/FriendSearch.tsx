@@ -1,80 +1,82 @@
 
 import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import { toast } from '../../components/ui/use-toast';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 
+// Enhanced mock user data with emails and usernames
+const MOCK_USERS = [
+  {
+    id: 201,
+    name: 'Jessica Torres',
+    username: 'jesst',
+    email: 'jessica.torres@example.com',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+    location: 'Marina del Rey, CA',
+    mutualFriends: 3,
+  },
+  {
+    id: 202,
+    name: 'Robert Chen',
+    username: 'robchen',
+    email: 'robert.chen@example.com',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+    location: 'Seattle, WA',
+    mutualFriends: 1,
+  },
+  {
+    id: 203,
+    name: 'Maria Garcia',
+    username: 'mariag',
+    email: 'maria.garcia@example.com',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+    location: 'San Diego, CA',
+    mutualFriends: 5,
+  },
+  {
+    id: 204,
+    name: 'David Wilson',
+    username: 'dwilson',
+    email: 'david.wilson@example.com',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+    location: 'Portland, OR',
+    mutualFriends: 0,
+  },
+];
+
 const FriendSearch = () => {
   const { user, isSignedIn } = useUser();
-  const { client } = useClerk();
-  const [searchType, setSearchType] = useState('email'); // 'email' or 'username'
+  const [searchType, setSearchType] = useState('name'); // 'name', 'email', or 'username'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim() === '') {
       setSearchResults([]);
       return;
     }
     
-    setIsSearching(true);
+    // Simulate search with mock data based on search type
+    const filtered = MOCK_USERS.filter(mockUser => {
+      const query = searchQuery.toLowerCase();
+      
+      switch(searchType) {
+        case 'email':
+          return mockUser.email.toLowerCase().includes(query);
+        case 'username':
+          return mockUser.username.toLowerCase().includes(query);
+        default:
+          // Default to name search
+          return mockUser.name.toLowerCase().includes(query) || 
+                 mockUser.location.toLowerCase().includes(query);
+      }
+    });
     
-    try {
-      // Use the appropriate search endpoint based on the search type
-      let userList = [];
-      
-      if (searchType === 'email') {
-        // Search for users by email
-        const response = await client.users.getUserList({
-          emailAddress: [searchQuery.toLowerCase()],
-          limit: 10,
-        });
-        userList = response.data || [];
-      } else if (searchType === 'username') {
-        // Search for users by username
-        const response = await client.users.getUserList({
-          username: [searchQuery.toLowerCase()],
-          limit: 10,
-        });
-        userList = response.data || [];
-      }
-      
-      // Filter out the current user
-      const filtered = userList
-        .filter(clerkUser => clerkUser.id !== user?.id)
-        .map(clerkUser => ({
-          id: clerkUser.id,
-          username: clerkUser.username || 'No username',
-          email: clerkUser.primaryEmailAddress?.emailAddress || 'No email',
-          avatar: clerkUser.imageUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
-          location: 'Location not available',
-          mutualFriends: 0
-        }));
-      
-      setSearchResults(filtered);
-      
-      if (filtered.length === 0) {
-        toast({
-          title: "No users found",
-          description: `No users found matching "${searchQuery}" in ${searchType}.`,
-          variant: "default"
-        });
-      }
-    } catch (error) {
-      console.error('Error searching for users:', error);
-      toast({
-        title: "Search error",
-        description: "There was an error searching for users. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSearching(false);
-    }
+    setSearchResults(filtered);
   };
   
   const handleAddFriend = (userId) => {
@@ -110,6 +112,14 @@ const FriendSearch = () => {
           <div className="flex gap-2">
             <Button 
               type="button" 
+              variant={searchType === 'name' ? 'default' : 'outline'}
+              className="text-sm flex-1"
+              onClick={() => setSearchType('name')}
+            >
+              Name
+            </Button>
+            <Button 
+              type="button" 
               variant={searchType === 'email' ? 'default' : 'outline'}
               className="text-sm flex-1"
               onClick={() => setSearchType('email')}
@@ -141,9 +151,8 @@ const FriendSearch = () => {
           <Button
             type="submit"
             className="absolute inset-y-0 right-0 px-4 bg-maronaut-500 text-white rounded-r-lg hover:bg-maronaut-600 transition-colors"
-            disabled={isSearching}
           >
-            {isSearching ? 'Searching...' : 'Search'}
+            Search
           </Button>
         </div>
       </form>
@@ -155,12 +164,12 @@ const FriendSearch = () => {
               <div className="flex items-center">
                 <img
                   src={user.avatar}
-                  alt={user.username}
+                  alt={user.name}
                   className="w-12 h-12 rounded-full object-cover border-2 border-white"
                 />
                 <div className="ml-3">
-                  <h3 className="font-semibold text-maronaut-700">@{user.username}</h3>
-                  <p className="text-sm text-maronaut-500">{user.email}</p>
+                  <h3 className="font-semibold text-maronaut-700">{user.name}</h3>
+                  <p className="text-sm text-maronaut-500">@{user.username}</p>
                   <p className="text-sm text-maronaut-500">{user.location}</p>
                   {user.mutualFriends > 0 && (
                     <p className="text-xs text-maronaut-400">
@@ -190,7 +199,7 @@ const FriendSearch = () => {
             </div>
           ))}
         </div>
-      ) : searchQuery !== '' && !isSearching ? (
+      ) : searchQuery !== '' ? (
         <div className="text-center py-8 text-maronaut-500">
           No users found matching "{searchQuery}"
         </div>
