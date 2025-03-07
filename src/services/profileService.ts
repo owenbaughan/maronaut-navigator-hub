@@ -10,7 +10,8 @@ import {
   where,
   getDocs,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  limit
 } from "firebase/firestore";
 
 export interface BoatDetails {
@@ -56,11 +57,15 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
       return false;
     }
     
-    const trimmedUsername = username.trim();
+    const trimmedUsername = username.trim().toLowerCase(); // Convert to lowercase for case-insensitive comparison
     console.log("Checking if username is available:", trimmedUsername);
     
     const profilesRef = collection(db, "userProfiles");
-    const q = query(profilesRef, where("username", "==", trimmedUsername));
+    const q = query(
+      profilesRef, 
+      where("username", "==", trimmedUsername),
+      limit(1) // Limit to 1 result for efficiency
+    );
     
     const querySnapshot = await getDocs(q);
     
@@ -77,10 +82,10 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     return isAvailable;
   } catch (error) {
     console.error("Error checking username availability:", error);
-    // In case of errors with the database query, assume username is available
-    // This prevents blocking sign-ups due to temporary Firebase issues
-    console.log("Error occurred, returning true to allow sign-up to proceed");
-    return true;
+    // In case of errors with the database query, assume username is not available
+    // to prevent potential duplicates
+    console.log("Error occurred, returning false to prevent potential duplicates");
+    return false;
   }
 };
 
@@ -95,7 +100,7 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     
     // Ensure username is properly set and trimmed
     if (profile.username) {
-      profile.username = profile.username.trim();
+      profile.username = profile.username.trim().toLowerCase(); // Store as lowercase
     }
     
     console.log("Saving profile:", profile);
@@ -199,7 +204,7 @@ export const createInitialProfile = async (userId: string, email: string, userna
     
     const initialProfile: UserProfile = {
       userId,
-      username: username.trim(),
+      username: username.trim().toLowerCase(), // Store as lowercase
       email,
       location: "",
       bio: "",

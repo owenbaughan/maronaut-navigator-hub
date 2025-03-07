@@ -44,8 +44,9 @@ const SignUp = () => {
     const timer = setTimeout(async () => {
       setIsCheckingUsername(true);
       try {
-        const isAvailable = await checkUsername(username);
-        console.log(`Username check result for ${username}: ${isAvailable}`);
+        const trimmedUsername = username.trim().toLowerCase();
+        const isAvailable = await checkUsername(trimmedUsername);
+        console.log(`Username check result for ${trimmedUsername}: ${isAvailable}`);
         setIsUsernameValid(isAvailable);
       } catch (error) {
         console.error("Error checking username:", error);
@@ -64,7 +65,7 @@ const SignUp = () => {
     
     // Validate username
     if (!isUsernameValid) {
-      setError(username.length < 3 ? 'Username must be at least 3 characters' : 'Username already taken');
+      setError(username.trim().length < 3 ? 'Username must be at least 3 characters' : 'Username already taken');
       return;
     }
     
@@ -77,7 +78,7 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      await signUp(username, email, password);
+      await signUp(username.trim().toLowerCase(), email, password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to create account');

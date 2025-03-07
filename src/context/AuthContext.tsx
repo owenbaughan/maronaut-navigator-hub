@@ -44,30 +44,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
-    console.log("AuthContext: Checking username availability:", username);
-    const result = await isUsernameAvailable(username);
+    const trimmedUsername = username.trim().toLowerCase();
+    console.log("AuthContext: Checking username availability:", trimmedUsername);
+    const result = await isUsernameAvailable(trimmedUsername);
     console.log("AuthContext: Username availability result:", result);
     return result;
   };
 
   const signUp = async (username: string, email: string, password: string) => {
     try {
+      const trimmedUsername = username.trim().toLowerCase();
+      
       // First check if the username is available
-      const isAvailable = await isUsernameAvailable(username.trim());
+      const isAvailable = await isUsernameAvailable(trimmedUsername);
       if (!isAvailable) {
-        console.log("Username already taken:", username);
+        console.log("Username already taken:", trimmedUsername);
         throw new Error("Username already taken. Please choose another one.");
       }
       
-      console.log("Creating new user account with username:", username);
+      console.log("Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
       // Update the user's display name with the username
-      await updateProfile(user, { displayName: username.trim() });
+      await updateProfile(user, { displayName: trimmedUsername });
       
       // Create initial profile with username
-      await createInitialProfile(user.uid, email, username.trim());
+      await createInitialProfile(user.uid, email, trimmedUsername);
       
       toast({
         title: "Account created",
