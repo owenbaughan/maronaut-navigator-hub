@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -57,6 +56,9 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
     homeMarina: "",
   });
   
+  // Store original profile data for reference
+  const [originalProfile, setOriginalProfile] = React.useState<any>(null);
+  
   // Load user data when dialog opens
   React.useEffect(() => {
     if (isLoaded && currentUser && open) {
@@ -65,8 +67,12 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
         try {
           setError(null);
           if (currentUser.uid) {
+            console.log("Loading profile data for user:", currentUser.uid);
             const profile = await getUserProfile(currentUser.uid);
+            console.log("Profile data loaded:", profile);
+            
             if (profile) {
+              setOriginalProfile(profile);
               setFirstName(profile.firstName || "");
               setLastName(profile.lastName || "");
               setLocation(profile.location || "");
@@ -85,6 +91,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
               const nameParts = displayName.split(" ");
               setFirstName(nameParts[0] || "");
               setLastName(nameParts.slice(1).join(" ") || "");
+              setOriginalProfile(null);
             }
           }
         } catch (error) {
@@ -109,6 +116,8 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
     setError(null);
     
     try {
+      console.log("Starting profile save process");
+      
       // Validate boat type
       if (boatDetails.type && !validateBoatType(boatDetails.type)) {
         setError("Boat type must be one of: catamaran, sailboat, or motorboat");
@@ -121,24 +130,29 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
       await updateProfile(currentUser, {
         displayName: fullName
       });
+      console.log("Display name updated successfully");
+      
+      // Prepare profile data with proper timestamp handling
+      const profileData = {
+        userId: currentUser.uid,
+        firstName,
+        lastName,
+        location,
+        bio,
+        sailingSince,
+        boatDetails,
+        email: currentUser.email || undefined,
+        // Keep createdAt from original profile if it exists
+        createdAt: originalProfile?.createdAt || null,
+        updatedAt: null // This will be set by the server
+      };
+      
+      console.log("Prepared profile data:", profileData);
       
       // Save custom data to Firestore
-      if (currentUser.uid) {
-        const userProfile = await getUserProfile(currentUser.uid);
-        
-        await saveUserProfile({
-          userId: currentUser.uid,
-          firstName,
-          lastName,
-          location,
-          bio,
-          sailingSince,
-          boatDetails,
-          email: currentUser.email || undefined,
-          createdAt: userProfile?.createdAt || new Date(),
-          updatedAt: new Date(),
-        });
-      }
+      await saveUserProfile(profileData);
+      
+      console.log("Profile saved, triggering update");
       
       toast({
         title: "Profile updated",

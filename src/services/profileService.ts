@@ -37,23 +37,29 @@ export interface UserProfile {
 // Create or update a user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
+    console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
     const userDoc = await getDoc(userRef);
     
     // Ensure dates are in the correct format for Firestore
     const profileData = {
       ...profile,
-      createdAt: profile.createdAt instanceof Date ? Timestamp.fromDate(profile.createdAt) : profile.createdAt,
+      createdAt: profile.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp()
     };
     
+    console.log("Processed profile data for saving:", profileData);
+    
     if (!userDoc.exists()) {
       // Create new profile
+      console.log("Creating new profile document");
       await setDoc(userRef, profileData);
     } else {
       // Update existing profile
+      console.log("Updating existing profile document");
       await updateDoc(userRef, profileData);
     }
+    console.log("Profile saved successfully");
   } catch (error) {
     console.error("Error saving user profile:", error);
     throw error;
@@ -63,12 +69,16 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
 // Get a user profile by user ID
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
+    console.log("Getting profile for user:", userId);
     const userRef = doc(db, "userProfiles", userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
-      return userDoc.data() as UserProfile;
+      const data = userDoc.data() as UserProfile;
+      console.log("Profile found:", data);
+      return data;
     } else {
+      console.log("No profile found for user");
       return null;
     }
   } catch (error) {
