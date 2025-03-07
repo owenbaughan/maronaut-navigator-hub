@@ -51,11 +51,16 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 // Check if a username already exists
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
   try {
-    if (!username) return false;
+    if (!username || username.trim().length < 3) {
+      console.log("Username too short or empty");
+      return false;
+    }
     
-    console.log("Checking if username is available:", username);
+    const trimmedUsername = username.trim();
+    console.log("Checking if username is available:", trimmedUsername);
+    
     const profilesRef = collection(db, "userProfiles");
-    const q = query(profilesRef, where("username", "==", username));
+    const q = query(profilesRef, where("username", "==", trimmedUsername));
     
     const querySnapshot = await getDocs(q);
     const isAvailable = querySnapshot.empty;
@@ -64,8 +69,10 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     return isAvailable;
   } catch (error) {
     console.error("Error checking username availability:", error);
-    // Return false if there's an error to be safe
-    return false;
+    // In case of errors with the database query, assume username is available
+    // This prevents blocking sign-ups due to temporary Firebase issues
+    console.log("Error occurred, returning true to allow sign-up to proceed");
+    return true;
   }
 };
 
