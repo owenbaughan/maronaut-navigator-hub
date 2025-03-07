@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import FriendsList from '../components/friends/FriendsList';
@@ -8,10 +8,20 @@ import TripTimeline from '../components/friends/TripTimeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FriendsFeed = () => {
+  const [activeTab, setActiveTab] = useState("feed");
+  
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
+    
+    // Log to help debug tab switching
+    console.log("FriendsFeed mounted, active tab:", activeTab);
   }, []);
+
+  const handleTabChange = (value) => {
+    console.log("Tab changed to:", value);
+    setActiveTab(value);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,7 +34,7 @@ const FriendsFeed = () => {
                 Friends & Trip Feed
               </h1>
               
-              <Tabs defaultValue="feed" className="w-full animate-fade-in">
+              <Tabs defaultValue="feed" value={activeTab} onValueChange={handleTabChange} className="w-full animate-fade-in">
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger value="feed">Trip Feed</TabsTrigger>
                   <TabsTrigger value="friends">Friends</TabsTrigger>
@@ -35,11 +45,11 @@ const FriendsFeed = () => {
                 </TabsContent>
                 
                 <TabsContent value="friends" className="space-y-8">
-                  <div className="w-full">
+                  <div className="glass-panel p-6 animate-fade-in mb-8">
                     <FriendSearch />
-                    <div className="mt-8">
-                      <FriendsList />
-                    </div>
+                  </div>
+                  <div className="animate-fade-in">
+                    <FriendsList />
                   </div>
                 </TabsContent>
               </Tabs>
