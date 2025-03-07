@@ -14,6 +14,14 @@ const BoatDetailsSection: React.FC<BoatDetailsSectionProps> = ({
   boatDetails,
   setBoatDetails
 }) => {
+  // Helper function to update a single field
+  const updateField = (field: keyof BoatDetails, value: string) => {
+    setBoatDetails({
+      ...boatDetails,
+      [field]: value
+    });
+  };
+
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-medium">Boat Details</h3>
@@ -27,7 +35,7 @@ const BoatDetailsSection: React.FC<BoatDetailsSectionProps> = ({
           <Input
             id="boatName"
             value={boatDetails.name}
-            onChange={(e) => setBoatDetails(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => updateField('name', e.target.value)}
             placeholder="Name of your vessel"
           />
         </div>
@@ -39,7 +47,7 @@ const BoatDetailsSection: React.FC<BoatDetailsSectionProps> = ({
           <Input
             id="boatType"
             value={boatDetails.type}
-            onChange={(e) => setBoatDetails(prev => ({ ...prev, type: e.target.value }))}
+            onChange={(e) => updateField('type', e.target.value)}
             placeholder="Make and model"
           />
         </div>
@@ -51,7 +59,7 @@ const BoatDetailsSection: React.FC<BoatDetailsSectionProps> = ({
           <Input
             id="boatLength"
             value={boatDetails.length}
-            onChange={(e) => setBoatDetails(prev => ({ ...prev, length: e.target.value }))}
+            onChange={(e) => updateField('length', e.target.value)}
             placeholder="Length in feet"
           />
         </div>
@@ -63,7 +71,7 @@ const BoatDetailsSection: React.FC<BoatDetailsSectionProps> = ({
           <Input
             id="homeMarina"
             value={boatDetails.homeMarina}
-            onChange={(e) => setBoatDetails(prev => ({ ...prev, homeMarina: e.target.value }))}
+            onChange={(e) => updateField('homeMarina', e.target.value)}
             placeholder="Where your boat is based"
           />
         </div>
