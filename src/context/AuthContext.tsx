@@ -47,13 +47,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const trimmedUsername = username.trim().toLowerCase();
       console.log("AuthContext: Checking username availability:", trimmedUsername);
+      
+      // Make sure we're correctly using the isUsernameAvailable function
       const result = await isUsernameAvailable(trimmedUsername);
       console.log("AuthContext: Username availability result:", result);
+      
       return result;
     } catch (error) {
       console.error("Error in AuthContext.checkUsername:", error);
-      // If there's an error checking availability, return true to let the user try
-      // The Firestore rules will still enforce uniqueness at write time
+      // If there's an error, allow the user to try
+      // The final check during signup will still validate
       return true;
     }
   };

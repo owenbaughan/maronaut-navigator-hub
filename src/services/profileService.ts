@@ -1,4 +1,3 @@
-
 import { db } from "../lib/firebase";
 import { 
   doc, 
@@ -60,6 +59,8 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     const trimmedUsername = username.trim().toLowerCase(); // Convert to lowercase for case-insensitive comparison
     console.log("Checking if username is available:", trimmedUsername);
     
+    // This is a crucial check - we're looking in the userProfiles collection
+    // where the username field equals the trimmed, lowercase username
     const profilesRef = collection(db, "userProfiles");
     const q = query(
       profilesRef, 
@@ -69,36 +70,14 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     
     const querySnapshot = await getDocs(q);
     
-    // Log the number of documents found and details for debugging
-    console.log(`Username check found ${querySnapshot.size} documents with username: ${trimmedUsername}`);
-    console.log(`Query path: ${q.toString()}`);
-    
-    // Create a count and list of found documents for debugging
-    let count = 0;
-    const foundDocs = [];
-    
-    querySnapshot.forEach(doc => {
-      count++;
-      const data = doc.data();
-      foundDocs.push({
-        id: doc.id,
-        username: data.username
-      });
-      console.log(`Existing username found in document ID: ${doc.id}, with username: ${data.username}`);
-    });
-    
-    console.log(`Total documents counted manually: ${count}`);
-    console.log(`Found documents:`, JSON.stringify(foundDocs));
-    
+    // If we found a document, the username is taken
     const isAvailable = querySnapshot.empty;
-    console.log("Final username availability result:", isAvailable);
+    console.log("Final username availability result:", isAvailable, "Documents found:", querySnapshot.size);
     
     return isAvailable;
   } catch (error) {
     console.error("Error checking username availability:", error);
-    // In case of database errors, let the user try to create the account
-    // The uniqueness will still be enforced at the database level if needed
-    console.log("Error occurred during availability check, returning true to allow signup attempt");
+    // In case of database errors, default to available to let the user try
     return true;
   }
 };
@@ -234,5 +213,6 @@ export const createInitialProfile = async (userId: string, email: string, userna
     };
     
     await saveUserProfile(initialProfile);
+    console.log("Successfully created initial profile with username:", username);
   }
 };
