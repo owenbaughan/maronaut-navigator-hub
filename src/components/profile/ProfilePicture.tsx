@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -62,6 +63,7 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
           description: "Please select an image file.",
           variant: "destructive"
         });
+        setIsUploading(false);
         return;
       }
       
@@ -71,37 +73,56 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
           description: "Please select an image smaller than 5MB.",
           variant: "destructive"
         });
+        setIsUploading(false);
         return;
       }
       
+      // Create a local preview
       const objectUrl = URL.createObjectURL(file);
       setImageUrl(objectUrl);
       
-      const downloadURL = await uploadProfilePicture(currentUser.uid, file);
-      console.log("Profile picture upload succeeded. URL:", downloadURL);
-      
-      URL.revokeObjectURL(objectUrl);
-      
-      setImageUrl(downloadURL);
-      
-      await updateProfile(currentUser, {
-        photoURL: downloadURL
-      });
-      
-      if (onPictureUpdated) {
-        onPictureUpdated(downloadURL);
+      try {
+        console.log("Starting profile picture upload for user:", currentUser.uid);
+        const downloadURL = await uploadProfilePicture(currentUser.uid, file);
+        console.log("Profile picture upload succeeded. URL:", downloadURL);
+        
+        // Clean up the object URL to prevent memory leaks
+        URL.revokeObjectURL(objectUrl);
+        
+        // Update the UI with the actual Firebase Storage URL
+        setImageUrl(downloadURL);
+        
+        // Update the user's profile in Firebase Auth
+        await updateProfile(currentUser, {
+          photoURL: downloadURL
+        });
+        
+        // Notify parent component
+        if (onPictureUpdated) {
+          onPictureUpdated(downloadURL);
+        }
+        
+        toast({
+          title: "Profile picture updated",
+          description: "Your profile picture has been successfully updated."
+        });
+      } catch (error) {
+        console.error("Error in Firebase upload:", error);
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload profile picture. Please try again.",
+          variant: "destructive"
+        });
+        
+        // Revert to previous image if upload fails
+        URL.revokeObjectURL(objectUrl);
+        setImageUrl(url);
       }
-      
-      toast({
-        title: "Profile picture updated",
-        description: "Your profile picture has been successfully updated."
-      });
-      
     } catch (error) {
-      console.error("Error uploading profile picture:", error);
+      console.error("Error in file handling:", error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: "Failed to process the image. Please try again.",
         variant: "destructive"
       });
       setImageUrl(url);

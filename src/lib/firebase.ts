@@ -18,7 +18,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAAbWsq2c3qS47ytgA-x_DPvEOpjy5402g",
   authDomain: "maronuat.firebaseapp.com",
   projectId: "maronuat",
-  storageBucket: "maronuat.appspot.com", // Fixed storageBucket URL
+  storageBucket: "maronuat.appspot.com",
   messagingSenderId: "927440294332",
   appId: "1:927440294332:web:5f9f7d3a00efa245c01bb9",
   measurementId: "G-9CWPQ39QL9"
@@ -29,7 +29,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
-const analytics = getAnalytics(app);
+
+// Initialize Analytics only in browser environment
+let analytics;
+try {
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+} catch (error) {
+  console.error("Analytics initialization failed:", error);
+}
 
 export { 
   app, 

@@ -84,13 +84,19 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
     console.log("Download URL:", downloadURL);
     
     // Update user profile with the new picture URL
-    const userProfile = await getUserProfile(userId);
-    if (userProfile) {
-      await saveUserProfile({
-        ...userProfile,
-        profilePicture: downloadURL,
-        updatedAt: new Date()
-      });
+    try {
+      const userProfile = await getUserProfile(userId);
+      if (userProfile) {
+        await saveUserProfile({
+          ...userProfile,
+          profilePicture: downloadURL,
+          updatedAt: new Date()
+        });
+      }
+    } catch (error) {
+      console.error("Error updating user profile with new picture URL:", error);
+      // Continue execution - we still want to return the downloadURL even if 
+      // updating the user profile fails
     }
     
     return downloadURL;
