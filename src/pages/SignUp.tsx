@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -23,18 +22,15 @@ const SignUp = () => {
   const { signUp, checkUsername } = useAuth();
   const navigate = useNavigate();
 
-  // Clear validation state when username changes
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
     
-    // Reset validation when input changes
     if (isUsernameValid !== null) {
       setIsUsernameValid(null);
     }
   };
 
-  // Check username availability with debounce
   useEffect(() => {
     if (!username || username.trim().length < 3) {
       setIsUsernameValid(null);
@@ -42,19 +38,27 @@ const SignUp = () => {
     }
 
     const timer = setTimeout(async () => {
-      setIsCheckingUsername(true);
       try {
-        const trimmedUsername = username.trim().toLowerCase();
-        const isAvailable = await checkUsername(trimmedUsername);
-        console.log(`Username check result for ${trimmedUsername}: ${isAvailable}`);
+        setIsCheckingUsername(true);
+        setError('');
+        
+        console.log("SignUp: About to check username:", username.trim().toLowerCase());
+        const isAvailable = await checkUsername(username.trim().toLowerCase());
+        console.log("SignUp: Username availability result:", isAvailable);
+        
         setIsUsernameValid(isAvailable);
+        
+        if (!isAvailable) {
+          setError('Username already taken. Please choose another one.');
+        }
       } catch (error) {
-        console.error("Error checking username:", error);
-        setIsUsernameValid(false);
+        console.error("Error checking username in Sign Up:", error);
+        setIsUsernameValid(null);
+        setError('Could not verify username availability. Please try again.');
       } finally {
         setIsCheckingUsername(false);
       }
-    }, 500);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [username, checkUsername]);
@@ -63,13 +67,16 @@ const SignUp = () => {
     e.preventDefault();
     setError('');
     
-    // Validate username
-    if (!isUsernameValid) {
-      setError(username.trim().length < 3 ? 'Username must be at least 3 characters' : 'Username already taken');
+    if (username.trim().length < 3) {
+      setError('Username must be at least 3 characters');
       return;
     }
     
-    // Validate passwords match
+    if (isUsernameValid === false) {
+      setError('Username already taken. Please choose another one.');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -78,6 +85,15 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
+      const isFinallyAvailable = await checkUsername(username.trim().toLowerCase());
+      
+      if (!isFinallyAvailable) {
+        setError('This username was just taken. Please choose another one.');
+        setIsUsernameValid(false);
+        setIsLoading(false);
+        return;
+      }
+      
       await signUp(username.trim().toLowerCase(), email, password);
       navigate('/dashboard');
     } catch (err: any) {
@@ -199,7 +215,7 @@ const SignUp = () => {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoading || isCheckingUsername || !isUsernameValid}>
+                  disabled={isLoading || isCheckingUsername || (username.length >= 3 && isUsernameValid === false)}>
                   {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>

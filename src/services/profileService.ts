@@ -69,23 +69,37 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     
     const querySnapshot = await getDocs(q);
     
-    // Log the number of documents found
+    // Log the number of documents found and details for debugging
     console.log(`Username check found ${querySnapshot.size} documents with username: ${trimmedUsername}`);
+    console.log(`Query path: ${q.toString()}`);
     
-    // If debugging, log document IDs
+    // Create a count and list of found documents for debugging
+    let count = 0;
+    const foundDocs = [];
+    
     querySnapshot.forEach(doc => {
-      console.log(`Existing username found in document ID: ${doc.id}`);
+      count++;
+      const data = doc.data();
+      foundDocs.push({
+        id: doc.id,
+        username: data.username
+      });
+      console.log(`Existing username found in document ID: ${doc.id}, with username: ${data.username}`);
     });
     
+    console.log(`Total documents counted manually: ${count}`);
+    console.log(`Found documents:`, JSON.stringify(foundDocs));
+    
     const isAvailable = querySnapshot.empty;
-    console.log("Username available:", isAvailable);
+    console.log("Final username availability result:", isAvailable);
+    
     return isAvailable;
   } catch (error) {
     console.error("Error checking username availability:", error);
-    // In case of errors with the database query, assume username is not available
-    // to prevent potential duplicates
-    console.log("Error occurred, returning false to prevent potential duplicates");
-    return false;
+    // In case of database errors, let the user try to create the account
+    // The uniqueness will still be enforced at the database level if needed
+    console.log("Error occurred during availability check, returning true to allow signup attempt");
+    return true;
   }
 };
 

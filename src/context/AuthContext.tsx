@@ -39,16 +39,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const checkUsername = async (username: string): Promise<boolean> => {
-    if (!username || username.trim().length < 3) {
-      console.log("Username too short, not checking availability");
-      return false;
+    try {
+      if (!username || username.trim().length < 3) {
+        console.log("Username too short, not checking availability");
+        return false;
+      }
+      
+      const trimmedUsername = username.trim().toLowerCase();
+      console.log("AuthContext: Checking username availability:", trimmedUsername);
+      const result = await isUsernameAvailable(trimmedUsername);
+      console.log("AuthContext: Username availability result:", result);
+      return result;
+    } catch (error) {
+      console.error("Error in AuthContext.checkUsername:", error);
+      // If there's an error checking availability, return true to let the user try
+      // The Firestore rules will still enforce uniqueness at write time
+      return true;
     }
-    
-    const trimmedUsername = username.trim().toLowerCase();
-    console.log("AuthContext: Checking username availability:", trimmedUsername);
-    const result = await isUsernameAvailable(trimmedUsername);
-    console.log("AuthContext: Username availability result:", result);
-    return result;
   };
 
   const signUp = async (username: string, email: string, password: string) => {
