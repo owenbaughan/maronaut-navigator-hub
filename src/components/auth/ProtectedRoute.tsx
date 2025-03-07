@@ -10,9 +10,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isSignedIn, isLoaded } = useAuth();
   const location = useLocation();
 
-  // Show nothing while loading
+  // Show loading indicator while authentication is loading
   if (!isLoaded) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-maronaut-700 mx-auto"></div>
+          <p className="mt-4 text-maronaut-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // Redirect to sign-in if not signed in
