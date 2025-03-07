@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -19,6 +18,7 @@ import {
   acceptFriendRequest, 
   removeFriendRequest 
 } from '@/services/friendService';
+import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
 
 const FriendsFeed = () => {
   const { currentUser } = useAuth();
@@ -29,6 +29,10 @@ const FriendsFeed = () => {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for friend profile dialog
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
   // Fetch data on component mount and when currentUser changes
   useEffect(() => {
@@ -131,6 +135,12 @@ const FriendsFeed = () => {
     }
   };
 
+  // Handle viewing a friend's profile
+  const handleViewFriendProfile = (friendId: string) => {
+    setSelectedFriendId(friendId);
+    setProfileDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -187,7 +197,11 @@ const FriendsFeed = () => {
                                   <p className="font-medium">{friend.username}</p>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" onClick={() => console.log("View profile", friend.friendId)}>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewFriendProfile(friend.friendId)}
+                              >
                                 View Profile
                               </Button>
                             </div>
@@ -312,6 +326,13 @@ const FriendsFeed = () => {
         </section>
       </main>
       <Footer />
+      
+      {/* Friend Profile Dialog */}
+      <FriendProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        friendId={selectedFriendId}
+      />
     </div>
   );
 };
