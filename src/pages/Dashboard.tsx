@@ -1,10 +1,52 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { MapPin, Clock, Compass, Wind, Anchor, Share2 } from 'lucide-react';
+import { getUserProfile, UserProfile } from '@/services/profileService';
 
 const Dashboard = () => {
+  const { currentUser, isLoaded, isSignedIn } = useAuth();
+  const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load user profile data
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (isLoaded && isSignedIn && currentUser) {
+        try {
+          setIsLoading(true);
+          const profile = await getUserProfile(currentUser.uid);
+          if (profile) {
+            console.log("Dashboard: Profile data loaded:", profile);
+            setProfileData(profile);
+          }
+        } catch (error) {
+          console.error("Error loading profile data:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, [isLoaded, isSignedIn, currentUser]);
+
+  // Get the greeting with the user's first name
+  const getGreeting = () => {
+    if (profileData?.firstName) {
+      return `Welcome back, Captain ${profileData.firstName}`;
+    } else if (currentUser?.displayName) {
+      // Fallback to display name if profile not loaded
+      const firstName = currentUser.displayName.split(' ')[0];
+      return `Welcome back, Captain ${firstName}`;
+    }
+    return "Welcome back, Captain";
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -13,7 +55,7 @@ const Dashboard = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h1 className="text-3xl md:text-4xl font-bold text-maronaut-700 mb-6 animate-fade-in">
-                Welcome back, Sailor
+                {isLoading ? "Loading..." : getGreeting()}
               </h1>
               <p className="text-lg text-maronaut-600/80 mb-8 animate-fade-in animate-delay-1">
                 Track your trips, monitor weather conditions, and view your sailing statistics.
