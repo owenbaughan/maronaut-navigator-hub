@@ -1,3 +1,4 @@
+
 import { db, storage } from "../lib/firebase";
 import { 
   doc, 
@@ -85,16 +86,28 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
     
     // Update user profile with the new picture URL
     try {
-      const userProfile = await getUserProfile(userId);
-      if (userProfile) {
-        await saveUserProfile({
-          ...userProfile,
+      const userRef = doc(db, "userProfiles", userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        // Update the existing document with the profile picture URL
+        await updateDoc(userRef, {
           profilePicture: downloadURL,
-          updatedAt: new Date()
+          updatedAt: serverTimestamp()
         });
+        console.log("Updated user profile with new picture URL in Firestore");
+      } else {
+        // If the user document doesn't exist, create it with basic info
+        await setDoc(userRef, {
+          userId,
+          profilePicture: downloadURL,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log("Created new user profile with picture URL in Firestore");
       }
     } catch (error) {
-      console.error("Error updating user profile with new picture URL:", error);
+      console.error("Error updating user profile in Firestore:", error);
       // Continue execution - we still want to return the downloadURL even if 
       // updating the user profile fails
     }
