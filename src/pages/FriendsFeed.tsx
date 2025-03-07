@@ -2,25 +2,25 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import FriendsList from '../components/friends/FriendsList';
-import FriendSearch from '../components/friends/FriendSearch';
 import TripTimeline from '../components/friends/TripTimeline';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const FriendsFeed = () => {
-  const [activeTab, setActiveTab] = useState("feed");
+  const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
-    
-    // Log to help debug tab switching
-    console.log("FriendsFeed mounted, active tab:", activeTab);
   }, []);
 
-  const handleTabChange = (value) => {
-    console.log("Tab changed to:", value);
-    setActiveTab(value);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim() === '') return;
+    
+    console.log("Searching for:", searchQuery);
+    // Search logic would be implemented here
   };
 
   return (
@@ -31,28 +31,33 @@ const FriendsFeed = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
               <h1 className="text-3xl font-bold text-maronaut-700 mb-6 animate-fade-in">
-                Friends & Trip Feed
+                Trip Feed
               </h1>
               
-              <Tabs defaultValue="feed" value={activeTab} onValueChange={handleTabChange} className="w-full animate-fade-in">
-                <TabsList className="grid w-full grid-cols-2 mb-8">
-                  <TabsTrigger value="feed">Trip Feed</TabsTrigger>
-                  <TabsTrigger value="friends">Friends</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="feed" className="space-y-8">
-                  <TripTimeline />
-                </TabsContent>
-                
-                <TabsContent value="friends" className="space-y-8">
-                  <div className="glass-panel p-6 animate-fade-in mb-8">
-                    <FriendSearch />
+              <div className="glass-panel p-6 animate-fade-in mb-8">
+                <form onSubmit={handleSearch} className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={18} className="text-maronaut-400" />
                   </div>
-                  <div className="animate-fade-in">
-                    <FriendsList />
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  <Input
+                    type="text"
+                    className="pl-10 pr-4 py-3 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
+                    placeholder="Search by sailor name or location..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    className="absolute inset-y-0 right-0 px-4 bg-maronaut-500 text-white rounded-r-lg hover:bg-maronaut-600 transition-colors"
+                  >
+                    Search
+                  </Button>
+                </form>
+              </div>
+              
+              <div className="animate-fade-in">
+                <TripTimeline />
+              </div>
             </div>
           </div>
         </section>
