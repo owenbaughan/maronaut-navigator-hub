@@ -36,12 +36,13 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
   const [loading, setLoading] = React.useState(false);
   const [profileData, setProfileData] = React.useState<Partial<UserProfile>>({});
   
-  // For basic user data from Firebase Auth
+  // For basic user data
+  const [username, setUsername] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [location, setLocation] = React.useState("");
   
-  // For custom data (to be stored in Firebase)
+  // For custom data
   const [bio, setBio] = React.useState("");
   const [sailingSince, setSailingSince] = React.useState("");
   const [boatDetails, setBoatDetails] = React.useState<BoatDetails>({
@@ -54,14 +55,9 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
   // Load user data when dialog opens
   React.useEffect(() => {
     if (isLoaded && currentUser && open) {
-      // Get display name and split it as a fallback
+      // Get display name (username) from Firebase
       const displayName = currentUser.displayName || "";
-      const nameParts = displayName.split(' ');
-      const defaultFirstName = nameParts[0] || '';
-      const defaultLastName = nameParts.slice(1).join(' ') || '';
-      
-      setFirstName(defaultFirstName);
-      setLastName(defaultLastName);
+      setUsername(displayName);
       
       // Load profile data from Firebase
       const loadProfileData = async () => {
@@ -73,8 +69,9 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
             if (profile) {
               console.log("Loaded profile data:", profile);
               setProfileData(profile);
-              setFirstName(profile.firstName || defaultFirstName);
-              setLastName(profile.lastName || defaultLastName);
+              setUsername(profile.username || displayName);
+              setFirstName(profile.firstName || "");
+              setLastName(profile.lastName || "");
               setLocation(profile.location || "");
               setBio(profile.bio || "");
               setSailingSince(profile.sailingSince || "");
@@ -119,17 +116,15 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
     try {
       console.log("Updating profile for user:", currentUser.uid);
       
-      // Combine first and last name for display name in Firebase Auth
-      const fullName = `${firstName} ${lastName}`.trim();
-      
-      // Update user profile in Firebase Auth
+      // Update username in Firebase Auth
       await updateProfile(currentUser, {
-        displayName: fullName
+        displayName: username
       });
       
       // Prepare profile data for saving to Firestore
       const updatedProfile: UserProfile = {
         userId: currentUser.uid,
+        username,
         firstName,
         lastName,
         location,
@@ -185,17 +180,33 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
             <h3 className="text-lg font-medium">Personal Information</h3>
             
             <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="username" className="flex items-center gap-2">
+                  <User size={16} />
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Your username"
+                  disabled // Username cannot be changed after creation
+                />
+                <p className="text-xs text-muted-foreground">
+                  Username cannot be changed after account creation.
+                </p>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="firstName" className="flex items-center gap-2">
-                    <User size={16} />
                     First Name
                   </Label>
                   <Input
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
+                    placeholder="First name (optional)"
                   />
                 </div>
                 
@@ -207,7 +218,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
+                    placeholder="Last name (optional)"
                   />
                 </div>
               </div>

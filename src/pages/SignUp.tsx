@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -8,22 +8,53 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Lock, AlertCircle, User } from 'lucide-react';
+import { Mail, Lock, AlertCircle, User, Check, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SignUp = () => {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signUp } = useAuth();
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null);
+  const { signUp, checkUsername } = useAuth();
   const navigate = useNavigate();
+
+  // Check username availability with debounce
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setIsUsernameValid(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingUsername(true);
+      try {
+        const isAvailable = await checkUsername(username);
+        setIsUsernameValid(isAvailable);
+      } catch (error) {
+        console.error("Error checking username:", error);
+        setIsUsernameValid(false);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username, checkUsername]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validate username
+    if (!isUsernameValid) {
+      setError(username.length < 3 ? 'Username must be at least 3 characters' : 'Username already taken');
+      return;
+    }
     
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -34,7 +65,7 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      await signUp(name, email, password);
+      await signUp(username, email, password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
@@ -65,17 +96,46 @@ const SignUp = () => {
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="flex items-center gap-2">
+                  <Label htmlFor="username" className="flex items-center gap-2">
                     <User size={16} />
-                    Full Name
+                    Username
                   </Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="username"
+                      placeholder="Choose a unique username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className={`pr-10 ${
+                        isUsernameValid === true ? 'border-green-500' : 
+                        isUsernameValid === false ? 'border-red-500' : ''
+                      }`}
+                      required
+                      minLength={3}
+                    />
+                    <div className="absolute inset-y-0 right-3 flex items-center">
+                      {isCheckingUsername && (
+                        <span className="animate-spin">
+                          <User size={16} className="text-gray-400" />
+                        </span>
+                      )}
+                      {!isCheckingUsername && isUsernameValid === true && (
+                        <Check size={16} className="text-green-500" />
+                      )}
+                      {!isCheckingUsername && isUsernameValid === false && (
+                        <X size={16} className="text-red-500" />
+                      )}
+                    </div>
+                  </div>
+                  {username && username.length < 3 && (
+                    <p className="text-xs text-amber-500">Username must be at least 3 characters</p>
+                  )}
+                  {isUsernameValid === false && username.length >= 3 && (
+                    <p className="text-xs text-red-500">Username already taken</p>
+                  )}
+                  {isUsernameValid === true && (
+                    <p className="text-xs text-green-500">Username available</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -123,7 +183,10 @@ const SignUp = () => {
                   />
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading || isCheckingUsername || !isUsernameValid}>
                   {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>

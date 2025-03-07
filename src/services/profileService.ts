@@ -22,8 +22,9 @@ export interface BoatDetails {
 
 export interface UserProfile {
   userId: string;
-  firstName: string;
-  lastName: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
   location: string;
   bio: string;
   boatDetails: BoatDetails;
@@ -45,6 +46,27 @@ const saveToLocalStorage = (profile: UserProfile): void => {
 const getFromLocalStorage = (userId: string): UserProfile | null => {
   const data = localStorage.getItem(`profile_${userId}`);
   return data ? JSON.parse(data) : null;
+};
+
+// Check if a username already exists
+export const isUsernameAvailable = async (username: string): Promise<boolean> => {
+  try {
+    if (!username) return false;
+    
+    console.log("Checking if username is available:", username);
+    const profilesRef = collection(db, "userProfiles");
+    const q = query(profilesRef, where("username", "==", username));
+    
+    const querySnapshot = await getDocs(q);
+    const isAvailable = querySnapshot.empty;
+    
+    console.log("Username available:", isAvailable);
+    return isAvailable;
+  } catch (error) {
+    console.error("Error checking username availability:", error);
+    // Return false if there's an error to be safe
+    return false;
+  }
 };
 
 // Create or update a user profile
@@ -148,21 +170,16 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 // Create an initial user profile when a new user signs up
-export const createInitialProfile = async (userId: string, email: string, name: string): Promise<void> => {
+export const createInitialProfile = async (userId: string, email: string, username: string): Promise<void> => {
   // Check if profile already exists
   const existingProfile = await getUserProfile(userId).catch(() => null);
   
   if (!existingProfile) {
     console.log("Creating initial profile for new user:", userId);
-    // Split name into first and last name
-    const nameParts = name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
     
     const initialProfile: UserProfile = {
       userId,
-      firstName,
-      lastName,
+      username,
       email,
       location: "",
       bio: "",

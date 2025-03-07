@@ -9,16 +9,17 @@ import {
   updateProfile,
   User
 } from '@/lib/firebase';
-import { createInitialProfile } from '@/services/profileService';
+import { createInitialProfile, isUsernameAvailable } from '@/services/profileService';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
   isLoaded: boolean;
   isSignedIn: boolean;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
+  signUp: (username: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  checkUsername: (username: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,16 +38,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const checkUsername = async (username: string): Promise<boolean> => {
+    if (!username || username.trim().length < 3) {
+      return false;
+    }
+    return await isUsernameAvailable(username);
+  };
+
+  const signUp = async (username: string, email: string, password: string) => {
     try {
+      // First check if the username is available
+      const isAvailable = await isUsernameAvailable(username);
+      if (!isAvailable) {
+        throw new Error("Username already taken. Please choose another one.");
+      }
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Update the user's display name
-      await updateProfile(user, { displayName: name });
+      // Update the user's display name with the username
+      await updateProfile(user, { displayName: username });
       
-      // Create initial profile
-      await createInitialProfile(user.uid, email, name);
+      // Create initial profile with username
+      await createInitialProfile(user.uid, email, username);
       
       toast({
         title: "Account created",
@@ -107,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     logout,
+    checkUsername,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
