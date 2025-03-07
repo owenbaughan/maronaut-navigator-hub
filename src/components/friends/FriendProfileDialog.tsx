@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Boat, MapPin, User, Calendar } from 'lucide-react';
+import { Ship, MapPin, User, Calendar } from 'lucide-react';
 import { getPublicUserProfile } from '@/services/profileService';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProfilePicture from '@/components/profile/ProfilePicture';
@@ -116,7 +116,7 @@ const FriendProfileDialog: React.FC<FriendProfileDialogProps> = ({
               <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Boat size={16} className="text-maronaut-500" />
+                    <Ship size={16} className="text-maronaut-500" />
                     <h4 className="font-medium">Boat Details</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
