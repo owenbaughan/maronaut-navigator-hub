@@ -57,7 +57,15 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     
     console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
-    const userDoc = await getDoc(userRef);
+    
+    try {
+      // Test if we can read from this location first
+      const testDoc = await getDoc(userRef);
+      console.log("Read permission test:", testDoc ? "Success" : "No document exists yet");
+    } catch (error) {
+      console.error("Permission denied on read test. Firebase security rules may be blocking access:", error);
+      throw new Error("Permission denied: Check your Firebase security rules for userProfiles collection");
+    }
     
     // Convert Date objects to Firestore timestamps
     const profileToSave = {
@@ -67,23 +75,30 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       updatedAt: new Date() // Always update the updatedAt timestamp
     };
     
-    if (!userDoc.exists()) {
-      // Create new profile with server timestamp
-      await setDoc(userRef, {
-        ...profileToSave,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log("Created new profile for:", profile.userId);
-    } else {
-      // Update existing profile with server timestamp, preserving original createdAt
-      const existingData = userDoc.data();
-      await updateDoc(userRef, {
-        ...profileToSave,
-        createdAt: existingData.createdAt, // Preserve original creation date
-        updatedAt: serverTimestamp()
-      });
-      console.log("Updated existing profile for:", profile.userId);
+    try {
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create new profile with server timestamp
+        await setDoc(userRef, {
+          ...profileToSave,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log("Created new profile for:", profile.userId);
+      } else {
+        // Update existing profile with server timestamp, preserving original createdAt
+        const existingData = userDoc.data();
+        await updateDoc(userRef, {
+          ...profileToSave,
+          createdAt: existingData.createdAt, // Preserve original creation date
+          updatedAt: serverTimestamp()
+        });
+        console.log("Updated existing profile for:", profile.userId);
+      }
+    } catch (error) {
+      console.error("Permission denied on write operation. Firebase security rules may be blocking writes:", error);
+      throw new Error("Permission denied: Check your Firebase security rules for userProfiles collection");
     }
     
     // Also save to localStorage as a fallback
@@ -107,16 +122,22 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     console.log("Getting profile for user:", userId);
     // Try to get from Firestore
     const userRef = doc(db, "userProfiles", userId);
-    const userDoc = await getDoc(userRef);
     
-    if (userDoc.exists()) {
-      const data = userDoc.data() as UserProfile;
-      console.log("Found profile in Firestore:", data);
-      return data;
-    } else {
-      console.log("Profile not found in Firestore, checking localStorage");
-      // If not in Firestore, try localStorage
-      return getFromLocalStorage(userId);
+    try {
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data() as UserProfile;
+        console.log("Found profile in Firestore:", data);
+        return data;
+      } else {
+        console.log("Profile not found in Firestore, checking localStorage");
+        // If not in Firestore, try localStorage
+        return getFromLocalStorage(userId);
+      }
+    } catch (error) {
+      console.error("Permission denied on read operation. Firebase security rules may be blocking reads:", error);
+      throw new Error("Permission denied: Check your Firebase security rules for userProfiles collection");
     }
   } catch (error) {
     console.error("Error getting user profile from Firestore:", error);
