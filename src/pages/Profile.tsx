@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { Settings, Edit, MapPin, Ship, Activity, Award, Star, Bookmark, LogOut } from 'lucide-react';
@@ -9,32 +9,46 @@ import { Button } from '@/components/ui/button';
 import { getUserProfile, BoatDetails } from '@/services/profileService';
 
 const Profile = () => {
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { currentUser, isLoaded, isSignedIn, logout } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   // State for user data
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
+  const [sailingSince, setSailingSince] = useState("");
   const [boatDetails, setBoatDetails] = useState<BoatDetails>({
     name: "",
     type: "",
+    brand: "",
     length: "",
     homeMarina: "",
   });
   
   // Load user data
   useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
+    if (isLoaded && isSignedIn && currentUser) {
+      // Parse display name
+      const displayName = currentUser.displayName || "";
+      const nameParts = displayName.split(" ");
+      setFirstName(nameParts[0] || "");
+      setLastName(nameParts.slice(1).join(" ") || "");
+      
       // Load profile data from Firebase
       const loadProfileData = async () => {
         try {
-          const profile = await getUserProfile(user.id);
+          const profile = await getUserProfile(currentUser.uid);
           if (profile) {
+            setFirstName(profile.firstName || firstName);
+            setLastName(profile.lastName || lastName);
             setBio(profile.bio || "");
             setLocation(profile.location || "");
+            setSailingSince(profile.sailingSince || "2015"); // Default for UI
             setBoatDetails(profile.boatDetails || {
               name: "",
               type: "",
+              brand: "",
               length: "",
               homeMarina: "",
             });
@@ -46,11 +60,40 @@ const Profile = () => {
       
       loadProfileData();
     }
-  }, [isLoaded, isSignedIn, user]);
+  }, [isLoaded, isSignedIn, currentUser, firstName, lastName]);
   
   // Function to open edit dialog
   const handleOpenEditDialog = () => {
     setEditDialogOpen(true);
+  };
+  
+  // Function to refresh data after update
+  const handleProfileUpdate = async () => {
+    if (currentUser) {
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        if (profile) {
+          setFirstName(profile.firstName);
+          setLastName(profile.lastName);
+          setBio(profile.bio);
+          setLocation(profile.location);
+          setSailingSince(profile.sailingSince || "2015");
+          setBoatDetails(profile.boatDetails);
+        }
+      } catch (error) {
+        console.error("Error refreshing profile data:", error);
+      }
+    }
+  };
+  
+  // Function to handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirect is handled by auth state change in app
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
   
   return (
@@ -71,7 +114,7 @@ const Profile = () => {
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className="relative">
                     <img 
-                      src={user?.imageUrl || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"} 
+                      src={currentUser?.photoURL || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"} 
                       alt="Profile" 
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                     />
@@ -85,22 +128,22 @@ const Profile = () => {
                   
                   <div className="text-center md:text-left flex-1">
                     <h1 className="text-2xl md:text-3xl font-bold text-maronaut-700 mb-2">
-                      {user?.fullName || "Captain Alex Morgan"}
+                      {firstName} {lastName}
                     </h1>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4 text-maronaut-600 mb-4">
-                      {(user?.publicMetadata?.location as string || 'San Francisco, CA') && (
+                      {location && (
                         <div className="flex items-center">
                           <MapPin size={16} className="mr-1" />
-                          {user?.publicMetadata?.location as string || 'San Francisco, CA'}
+                          {location}
                         </div>
                       )}
                       <div className="flex items-center">
                         <Ship size={16} className="mr-1" />
-                        Sailing since 2015
+                        Sailing since {sailingSince || "2015"}
                       </div>
                     </div>
                     <p className="text-maronaut-600/80 max-w-xl">
-                      {bio || "Passionate sailor exploring the waters of the West Coast. Interested in long-distance cruising and racing. Always looking for new destinations and sailing buddies."}
+                      {bio || "Passionate sailor exploring the waters. Interested in cruising and racing. Always looking for new destinations and sailing buddies."}
                     </p>
                   </div>
                 </div>
@@ -256,22 +299,31 @@ const Profile = () => {
                     <div className="space-y-3">
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Boat Name</h3>
-                        <p className="text-maronaut-700">{boatDetails.name || "Sea Whisper"}</p>
+                        <p className="text-maronaut-700">{boatDetails.name || "Not specified"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Type</h3>
-                        <p className="text-maronaut-700">{boatDetails.type || "Beneteau Oceanis 38"}</p>
+                        <p className="text-maronaut-700">
+                          {boatDetails.type ? 
+                            boatDetails.type.charAt(0).toUpperCase() + boatDetails.type.slice(1) : 
+                            "Not specified"}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-maronaut-600">Brand / Model</h3>
+                        <p className="text-maronaut-700">{boatDetails.brand || "Not specified"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Length</h3>
-                        <p className="text-maronaut-700">{boatDetails.length || "38 ft"}</p>
+                        <p className="text-maronaut-700">{boatDetails.length || "Not specified"}</p>
                       </div>
                       
                       <div>
                         <h3 className="text-sm font-medium text-maronaut-600">Home Marina</h3>
-                        <p className="text-maronaut-700">{boatDetails.homeMarina || "South Beach Harbor, San Francisco"}</p>
+                        <p className="text-maronaut-700">{boatDetails.homeMarina || "Not specified"}</p>
                       </div>
                     </div>
                     
@@ -287,7 +339,7 @@ const Profile = () => {
                   <Button 
                     variant="ghost"
                     className="w-full p-3 text-center flex items-center justify-center text-red-500 hover:text-red-600 font-medium glass-panel animate-fade-in animate-delay-5"
-                    onClick={() => window.location.href = "/user/sign-out"}
+                    onClick={handleLogout}
                   >
                     <LogOut size={18} className="mr-2" />
                     Sign Out
@@ -301,7 +353,11 @@ const Profile = () => {
       <Footer />
       
       {/* Profile Edit Dialog */}
-      <ProfileEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} />
+      <ProfileEditDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };
