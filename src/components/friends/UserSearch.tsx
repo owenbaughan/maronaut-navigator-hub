@@ -57,13 +57,21 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     setNoResults(false);
     
     try {
-      console.log(`Searching for username: "${searchQuery}" from user: ${currentUser.uid}`);
+      console.log(`Searching for username: "${searchQuery}" from user ID: ${currentUser.uid}, displayName: ${currentUser.displayName || 'No display name'}`);
+      
+      // Check if we're trying to find "gracejeanne" specifically to add more debug info
+      if (searchQuery.toLowerCase().includes('grace')) {
+        console.log("Searching for a username containing 'grace'");
+      }
+      
       const users = await searchUsers(searchQuery, currentUser.uid);
-      console.log("Search results:", users);
+      console.log("Search results returned:", users.length, "users");
+      console.log("Raw search results:", JSON.stringify(users));
       
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
         users.map(async (user) => {
+          console.log("Checking friendship status for user:", user.username);
           const { sentRequest, receivedRequest } = await checkFriendRequestExists(currentUser.uid, user.id);
           const isFriend = await checkFriendshipExists(currentUser.uid, user.id);
           
@@ -76,6 +84,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
             status = 'received';
           }
           
+          console.log("Status determined for", user.username, ":", status);
           return {
             ...user,
             status
@@ -85,6 +94,15 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       
       setSearchResults(usersWithStatus);
       setNoResults(usersWithStatus.length === 0);
+      
+      if (usersWithStatus.length === 0) {
+        console.log("No results found for query:", searchQuery);
+        toast({
+          title: "No users found",
+          description: `No sailors matching '${searchQuery}' were found.`,
+          variant: "default"
+        });
+      }
     } catch (error) {
       console.error("Search error:", error);
       toast({

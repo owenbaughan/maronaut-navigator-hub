@@ -44,24 +44,31 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
   if (!searchQuery.trim()) return [];
   
   try {
-    console.log("Searching users with query:", searchQuery);
+    console.log("Searching users with query:", searchQuery, "Current user:", currentUserId);
     const usersRef = collection(db, "userProfiles");
+    
+    // Log the collection path to ensure we're querying the right collection
+    console.log("Searching in collection:", usersRef.path);
     
     // Convert to lowercase for case-insensitive search
     const lowercaseQuery = searchQuery.toLowerCase();
     
     // Get all user profiles - we'll filter them in memory
-    // This is more flexible for small datasets than doing a startsWith query
     const querySnapshot = await getDocs(usersRef);
+    console.log("Total profiles found in database:", querySnapshot.size);
+    
     const users: any[] = [];
     
     querySnapshot.forEach((doc) => {
       const userData = doc.data();
+      console.log("Examining user:", userData.username, "ID:", userData.userId);
+      
       // Don't include the current user in search results
       if (userData.userId !== currentUserId) {
         // Check if username contains the search query (case insensitive)
         const username = (userData.username || "").toLowerCase();
         if (username.includes(lowercaseQuery)) {
+          console.log("Match found! Adding to results:", userData.username);
           users.push({
             id: userData.userId,
             username: userData.username,
@@ -71,11 +78,15 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
               autoAcceptFriends: false
             }
           });
+        } else {
+          console.log("No match for", userData.username, "with query", lowercaseQuery);
         }
+      } else {
+        console.log("Skipping current user:", userData.username);
       }
     });
     
-    console.log("Found users:", users);
+    console.log("Final search results:", users);
     return users;
   } catch (error) {
     console.error("Error searching users:", error);
