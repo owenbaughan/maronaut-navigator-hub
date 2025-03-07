@@ -44,12 +44,15 @@ jobs:
           echo "NODE_ENV: $NODE_ENV"
           echo "BASE_URL: ${{ github.repository }}"
           echo "Repository name: ${{ github.event.repository.name }}"
+          echo "CNAME file exists: ${{ hashFiles('CNAME') != '' }}"
+          cat CNAME || echo "CNAME file does not exist"
       - name: Build
         run: npm run build
         env:
           NODE_ENV: production
-          # Ensure the base URL is set correctly for GitHub Pages
-          VITE_BASE_URL: "/${{ github.event.repository.name }}/"
+          # Set base URL to "/" if using a custom domain (detected by CNAME file)
+          VITE_BASE_URL: ${{ hashFiles('CNAME') != '' && '/' || format('/{0}/', github.event.repository.name) }}
+          VITE_USE_CUSTOM_DOMAIN: ${{ hashFiles('CNAME') != '' && 'true' || 'false' }}
       - name: Debug build output
         run: |
           echo "Build output contents:"

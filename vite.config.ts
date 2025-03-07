@@ -5,12 +5,14 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => {
-  // Get the base URL from environment variables or use the repository name for production
-  const base = mode === 'production' 
-    ? process.env.VITE_BASE_URL || "/" 
-    : "/";
+  // Get the base URL from environment variables
+  // If using a custom domain with GitHub Pages, we should use "/"
+  const base = process.env.CUSTOM_DOMAIN === 'true' || process.env.VITE_USE_CUSTOM_DOMAIN === 'true'
+    ? '/'
+    : process.env.VITE_BASE_URL || '/';
   
   console.log(`Building with base: ${base} in ${mode} mode`);
+  console.log(`Custom domain: ${process.env.CUSTOM_DOMAIN || process.env.VITE_USE_CUSTOM_DOMAIN || 'false'}`);
   
   return {
     server: {

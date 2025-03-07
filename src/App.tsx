@@ -22,15 +22,14 @@ import FirebaseInitializer from "./components/firebase/FirebaseInitializer";
 const queryClient = new QueryClient();
 
 // Get the base URL from Vite's environment
-const BASE_URL = import.meta.env.BASE_URL || '/';
+const BASE_URL = '/';
 
 const App = () => {
   const { isLoaded } = useAuth();
 
-  // Enhanced debugging for GitHub Pages deployment
+  // Enhanced debugging for deployment
   console.log("Environment:", import.meta.env.MODE);
-  console.log("BASE_URL from env:", import.meta.env.BASE_URL);
-  console.log("Using BASE_URL:", BASE_URL);
+  console.log("BASE_URL used:", BASE_URL);
   console.log("Current pathname:", window.location.pathname);
   console.log("Current URL:", window.location.href);
   console.log("Document location:", document.location.href);
