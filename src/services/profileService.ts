@@ -1,3 +1,4 @@
+
 import { db } from "../lib/firebase";
 import { 
   doc, 
@@ -21,9 +22,7 @@ export interface BoatDetails {
 
 export interface UserProfile {
   userId: string;
-  firstName: string;
-  lastName: string;
-  name?: string;
+  name: string;
   location: string;
   bio: string;
   boatDetails: BoatDetails;
@@ -130,14 +129,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       if (userDoc.exists()) {
         const data = userDoc.data() as UserProfile;
         console.log("Found profile in Firestore:", data);
-
-        // Handle backward compatibility for profiles without firstName/lastName
-        if (!data.firstName && data.name) {
-          const nameParts = data.name.split(' ');
-          data.firstName = nameParts[0] || '';
-          data.lastName = nameParts.slice(1).join(' ') || '';
-        }
-        
         return data;
       } else {
         console.log("Profile not found in Firestore, checking localStorage");
@@ -162,17 +153,9 @@ export const createInitialProfile = async (userId: string, email: string, name: 
   
   if (!existingProfile) {
     console.log("Creating initial profile for new user:", userId);
-    
-    // Split the name into first and last name
-    const nameParts = name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-    
     const initialProfile: UserProfile = {
       userId,
-      firstName,
-      lastName,
-      name, // Keep for backward compatibility
+      name,
       email,
       location: "",
       bio: "",
