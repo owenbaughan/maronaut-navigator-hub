@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -9,7 +8,7 @@ import {
   updateProfile,
   User
 } from '@/lib/firebase';
-import { createInitialProfile, isUsernameAvailable } from '@/services/profileService';
+import { createInitialProfile } from '@/services/profileService';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
@@ -19,7 +18,6 @@ interface AuthContextType {
   signUp: (username: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkUsername: (username: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,39 +36,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const checkUsername = async (username: string): Promise<boolean> => {
-    try {
-      if (!username || username.trim().length < 3) {
-        console.log("Username too short, not checking availability");
-        return false;
-      }
-      
-      const trimmedUsername = username.trim().toLowerCase();
-      console.log("AuthContext: Checking username availability:", trimmedUsername);
-      
-      // Make sure we're correctly using the isUsernameAvailable function
-      const result = await isUsernameAvailable(trimmedUsername);
-      console.log("AuthContext: Username availability result:", result);
-      
-      return result;
-    } catch (error) {
-      console.error("Error in AuthContext.checkUsername:", error);
-      // If there's an error, allow the user to try
-      // The final check during signup will still validate
-      return true;
-    }
-  };
-
   const signUp = async (username: string, email: string, password: string) => {
     try {
       const trimmedUsername = username.trim().toLowerCase();
-      
-      // First check if the username is available
-      const isAvailable = await isUsernameAvailable(trimmedUsername);
-      if (!isAvailable) {
-        console.log("Username already taken:", trimmedUsername);
-        throw new Error("Username already taken. Please choose another one.");
-      }
       
       console.log("Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -141,7 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     logout,
-    checkUsername,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

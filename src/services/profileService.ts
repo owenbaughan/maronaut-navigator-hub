@@ -48,38 +48,10 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
   return data ? JSON.parse(data) : null;
 };
 
-// Check if a username already exists
+// This function is kept for backward compatibility but returns true always
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
-  try {
-    if (!username || username.trim().length < 3) {
-      console.log("Username too short or empty");
-      return false;
-    }
-    
-    const trimmedUsername = username.trim().toLowerCase(); // Convert to lowercase for case-insensitive comparison
-    console.log("Checking if username is available:", trimmedUsername);
-    
-    // This is a crucial check - we're looking in the userProfiles collection
-    // where the username field equals the trimmed, lowercase username
-    const profilesRef = collection(db, "userProfiles");
-    const q = query(
-      profilesRef, 
-      where("username", "==", trimmedUsername),
-      limit(1) // Limit to 1 result for efficiency
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    // If we found a document, the username is taken
-    const isAvailable = querySnapshot.empty;
-    console.log("Final username availability result:", isAvailable, "Documents found:", querySnapshot.size);
-    
-    return isAvailable;
-  } catch (error) {
-    console.error("Error checking username availability:", error);
-    // In case of database errors, default to available to let the user try
-    return true;
-  }
+  console.log("Username availability check is disabled, returning true for:", username);
+  return true;
 };
 
 // Create or update a user profile
