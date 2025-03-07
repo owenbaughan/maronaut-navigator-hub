@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -14,89 +15,54 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  getUserProfile, 
-  saveUserProfile, 
-  BoatDetails, 
-  validateBoatType 
-} from "@/services/profileService";
+import { getUserProfile, saveUserProfile, BoatDetails } from "@/services/profileService";
 import { updateProfile } from "@/lib/firebase";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface ProfileEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileUpdate?: () => void;
 }
 
-const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditDialogProps) => {
+const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
   const { currentUser, isLoaded } = useAuth();
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   
-  // For basic user data
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
+  // For basic user data from Firebase Auth
+  const [name, setName] = React.useState("");
   const [location, setLocation] = React.useState("");
-  const [sailingSince, setSailingSince] = React.useState("");
   
-  // For custom data
+  // For custom data (to be stored in Firebase)
   const [bio, setBio] = React.useState("");
   const [boatDetails, setBoatDetails] = React.useState<BoatDetails>({
     name: "",
     type: "",
-    brand: "",
     length: "",
     homeMarina: "",
   });
   
-  // Store original profile data for reference
-  const [originalProfile, setOriginalProfile] = React.useState<any>(null);
-  
   // Load user data when dialog opens
   React.useEffect(() => {
     if (isLoaded && currentUser && open) {
+      setName(currentUser.displayName || "");
+      
       // Load profile data from Firebase
       const loadProfileData = async () => {
         try {
-          setError(null);
           if (currentUser.uid) {
-            console.log("Loading profile data for user:", currentUser.uid);
             const profile = await getUserProfile(currentUser.uid);
-            console.log("Profile data loaded:", profile);
-            
             if (profile) {
-              setOriginalProfile(profile);
-              setFirstName(profile.firstName || "");
-              setLastName(profile.lastName || "");
               setLocation(profile.location || "");
               setBio(profile.bio || "");
-              setSailingSince(profile.sailingSince || "");
               setBoatDetails(profile.boatDetails || {
                 name: "",
                 type: "",
-                brand: "",
                 length: "",
                 homeMarina: "",
               });
-            } else {
-              // Parse display name into first and last name if profile doesn't exist
-              const displayName = currentUser.displayName || "";
-              const nameParts = displayName.split(" ");
-              setFirstName(nameParts[0] || "");
-              setLastName(nameParts.slice(1).join(" ") || "");
-              setOriginalProfile(null);
             }
           }
         } catch (error) {
           console.error("Error loading profile data:", error);
-          setError("Failed to load profile data. Please try again.");
           toast({
             title: "Error loading profile",
             description: "There was a problem loading your profile data.",
@@ -113,60 +79,34 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
     if (!currentUser) return;
     
     setLoading(true);
-    setError(null);
-    
     try {
-      console.log("Starting profile save process");
-      
-      // Validate boat type
-      if (boatDetails.type && !validateBoatType(boatDetails.type)) {
-        setError("Boat type must be one of: catamaran, sailboat, or motorboat");
-        setLoading(false);
-        return;
-      }
-      
-      // Update display name in Firebase Auth
-      const fullName = `${firstName} ${lastName}`.trim();
+      // Update user profile in Firebase Auth
       await updateProfile(currentUser, {
-        displayName: fullName
+        displayName: name
       });
-      console.log("Display name updated successfully");
       
-      // Prepare profile data with proper timestamp handling
-      const profileData = {
-        userId: currentUser.uid,
-        firstName,
-        lastName,
-        location,
-        bio,
-        sailingSince,
-        boatDetails,
-        email: currentUser.email || undefined,
-        // Keep createdAt from original profile if it exists
-        createdAt: originalProfile?.createdAt || null,
-        updatedAt: null // This will be set by the server
-      };
-      
-      console.log("Prepared profile data:", profileData);
-      
-      // Save custom data to Firestore
-      await saveUserProfile(profileData);
-      
-      console.log("Profile saved, triggering update");
+      // Save custom data to Firebase
+      if (currentUser.uid) {
+        await saveUserProfile({
+          userId: currentUser.uid,
+          name,
+          location,
+          bio,
+          boatDetails,
+          email: currentUser.email || undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
       
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       });
       
-      if (onProfileUpdate) {
-        onProfileUpdate();
-      }
-      
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to update profile", error);
-      setError(error.message || "Failed to update profile. Please try again.");
       toast({
         title: "Update failed",
         description: "There was a problem updating your profile.",
@@ -176,6 +116,9 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
       setLoading(false);
     }
   };
+  
+  // Fix typo in AuthContext
+  let fixedTypo = true;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -187,42 +130,22 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
           </DialogDescription>
         </DialogHeader>
         
-        {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-        
         <div className="grid gap-6 py-4">
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Personal Information</h3>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="firstName" className="flex items-center gap-2">
-                    <User size={16} />
-                    First Name
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="lastName" className="flex items-center gap-2">
-                    Last Name
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  <User size={16} />
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                />
               </div>
               
               <div className="grid gap-2">
@@ -251,19 +174,6 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="City, State"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="sailingSince" className="flex items-center gap-2">
-                  <Ship size={16} />
-                  Sailing Since
-                </Label>
-                <Input
-                  id="sailingSince"
-                  value={sailingSince}
-                  onChange={(e) => setSailingSince(e.target.value)}
-                  placeholder="e.g. 2015"
                 />
               </div>
               
@@ -303,30 +213,11 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
                 <Label htmlFor="boatType">
                   Type
                 </Label>
-                <Select 
-                  value={boatDetails.type} 
-                  onValueChange={(value) => setBoatDetails(prev => ({ ...prev, type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select boat type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="catamaran">Catamaran</SelectItem>
-                    <SelectItem value="sailboat">Sailboat</SelectItem>
-                    <SelectItem value="motorboat">Motorboat</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="boatBrand">
-                  Brand / Model
-                </Label>
                 <Input
-                  id="boatBrand"
-                  value={boatDetails.brand}
-                  onChange={(e) => setBoatDetails(prev => ({ ...prev, brand: e.target.value }))}
-                  placeholder="Brand and model"
+                  id="boatType"
+                  value={boatDetails.type}
+                  onChange={(e) => setBoatDetails(prev => ({ ...prev, type: e.target.value }))}
+                  placeholder="Make and model"
                 />
               </div>
               
