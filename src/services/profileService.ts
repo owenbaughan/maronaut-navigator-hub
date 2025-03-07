@@ -37,28 +37,46 @@ export interface UserProfile {
 // Create or update a user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
-    console.log("Saving profile:", profile);
+    console.log("Saving profile with ID:", profile.userId);
+    
+    if (!profile.userId) {
+      console.error("Cannot save profile: userId is missing");
+      throw new Error("User ID is required to save profile");
+    }
+    
     const userRef = doc(db, "userProfiles", profile.userId);
+    
+    // Check if profile exists first
     const userDoc = await getDoc(userRef);
     
-    // Ensure dates are in the correct format for Firestore
-    const profileData = {
-      ...profile,
-      createdAt: profile.createdAt || serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+    // Prepare profile data for Firestore
+    // Remove any undefined fields that might cause issues
+    const profileData: any = {};
     
-    console.log("Processed profile data for saving:", profileData);
+    Object.entries(profile).forEach(([key, value]) => {
+      if (value !== undefined) {
+        profileData[key] = value;
+      }
+    });
     
-    if (!userDoc.exists()) {
-      // Create new profile
-      console.log("Creating new profile document");
-      await setDoc(userRef, profileData);
-    } else {
-      // Update existing profile
-      console.log("Updating existing profile document");
+    // Handle timestamps
+    if (userDoc.exists()) {
+      // For updates: preserve createdAt, update updatedAt
+      const existingData = userDoc.data();
+      profileData.createdAt = existingData.createdAt;
+      profileData.updatedAt = serverTimestamp();
+      
+      console.log("Updating existing profile with data:", profileData);
       await updateDoc(userRef, profileData);
+    } else {
+      // For new profiles: set both timestamps
+      profileData.createdAt = serverTimestamp();
+      profileData.updatedAt = serverTimestamp();
+      
+      console.log("Creating new profile with data:", profileData);
+      await setDoc(userRef, profileData);
     }
+    
     console.log("Profile saved successfully");
   } catch (error) {
     console.error("Error saving user profile:", error);
@@ -69,6 +87,11 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
 // Get a user profile by user ID
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
+    if (!userId) {
+      console.error("Cannot get profile: userId is missing");
+      return null;
+    }
+    
     console.log("Getting profile for user:", userId);
     const userRef = doc(db, "userProfiles", userId);
     const userDoc = await getDoc(userRef);
@@ -76,9 +99,12 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     if (userDoc.exists()) {
       const data = userDoc.data() as UserProfile;
       console.log("Profile found:", data);
-      return data;
+      return {
+        ...data,
+        userId: userId // Ensure userId is set correctly
+      };
     } else {
-      console.log("No profile found for user");
+      console.log("No profile found for user:", userId);
       return null;
     }
   } catch (error) {
@@ -89,34 +115,49 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 // Create an initial user profile when a new user signs up
 export const createInitialProfile = async (userId: string, email: string, name: string): Promise<void> => {
-  // Parse name to first and last name
-  const nameParts = name.split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
-  
-  // Check if profile already exists
-  const existingProfile = await getUserProfile(userId).catch(() => null);
-  
-  if (!existingProfile) {
-    const initialProfile: UserProfile = {
-      userId,
-      firstName,
-      lastName,
-      email,
-      location: "",
-      bio: "",
-      boatDetails: {
-        name: "",
-        type: "",
-        brand: "",
-        length: "",
-        homeMarina: ""
-      },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+  try {
+    if (!userId) {
+      console.error("Cannot create initial profile: userId is missing");
+      return;
+    }
     
-    await saveUserProfile(initialProfile);
+    // Parse name to first and last name
+    const nameParts = name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    // Check if profile already exists
+    const existingProfile = await getUserProfile(userId).catch(() => null);
+    
+    if (!existingProfile) {
+      console.log("Creating initial profile for new user:", userId);
+      
+      const initialProfile: UserProfile = {
+        userId,
+        firstName,
+        lastName,
+        email,
+        location: "",
+        bio: "",
+        boatDetails: {
+          name: "",
+          type: "",
+          brand: "",
+          length: "",
+          homeMarina: ""
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      await saveUserProfile(initialProfile);
+      console.log("Initial profile created successfully");
+    } else {
+      console.log("Profile already exists for user:", userId);
+    }
+  } catch (error) {
+    console.error("Error creating initial profile:", error);
+    throw error;
   }
 };
 
