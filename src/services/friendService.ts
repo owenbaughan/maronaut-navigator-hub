@@ -53,36 +53,58 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
     // Convert to lowercase for case-insensitive search
     const lowercaseQuery = searchQuery.toLowerCase();
     
-    // Get all user profiles - we'll filter them in memory
+    // Get all user profiles from the database
     const querySnapshot = await getDocs(usersRef);
     console.log("Total profiles found in database:", querySnapshot.size);
     
+    // If no profiles were found, log it clearly
+    if (querySnapshot.empty) {
+      console.error("NO PROFILES FOUND IN DATABASE! Check your Firestore collection structure.");
+      return [];
+    }
+    
     const users: any[] = [];
+    
+    // Log all retrieved profiles for debugging
+    console.log("All profiles in database:");
+    querySnapshot.forEach((doc) => {
+      console.log("Document ID:", doc.id, "Data:", JSON.stringify(doc.data()));
+    });
     
     querySnapshot.forEach((doc) => {
       const userData = doc.data();
       console.log("Examining user:", userData.username, "ID:", userData.userId);
       
-      // Don't include the current user in search results
-      if (userData.userId !== currentUserId) {
-        // Check if username contains the search query (case insensitive)
-        const username = (userData.username || "").toLowerCase();
-        if (username.includes(lowercaseQuery)) {
-          console.log("Match found! Adding to results:", userData.username);
-          users.push({
-            id: userData.userId,
-            username: userData.username,
-            profilePicture: userData.profilePicture || null,
-            privacySettings: userData.privacySettings || {
-              isPublicProfile: true,
-              autoAcceptFriends: false
-            }
-          });
-        } else {
-          console.log("No match for", userData.username, "with query", lowercaseQuery);
-        }
-      } else {
+      // Skip if this is the current user
+      if (userData.userId === currentUserId) {
         console.log("Skipping current user:", userData.username);
+        return;
+      }
+      
+      // Ensure username exists before comparing
+      if (!userData.username) {
+        console.log("Skipping user with no username:", doc.id);
+        return;
+      }
+      
+      // Perform case-insensitive search
+      const username = userData.username.toLowerCase();
+      console.log(`Comparing '${username}' with search query '${lowercaseQuery}'`);
+      
+      // Check if username contains the search query (case insensitive)
+      if (username.includes(lowercaseQuery)) {
+        console.log("Match found! Adding to results:", userData.username);
+        users.push({
+          id: userData.userId,
+          username: userData.username,
+          profilePicture: userData.profilePicture || null,
+          privacySettings: userData.privacySettings || {
+            isPublicProfile: true,
+            autoAcceptFriends: false
+          }
+        });
+      } else {
+        console.log("No match for", userData.username, "with query", lowercaseQuery);
       }
     });
     

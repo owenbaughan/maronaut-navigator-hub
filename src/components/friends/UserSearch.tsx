@@ -59,14 +59,26 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     try {
       console.log(`Searching for username: "${searchQuery}" from user ID: ${currentUser.uid}, displayName: ${currentUser.displayName || 'No display name'}`);
       
-      // Check if we're trying to find "gracejeanne" specifically to add more debug info
+      // Special debug for gracejeanne user
       if (searchQuery.toLowerCase().includes('grace')) {
-        console.log("Searching for a username containing 'grace'");
+        console.log("🔎 SEARCHING FOR GRACE: Looking for a username containing 'grace'");
       }
       
       const users = await searchUsers(searchQuery, currentUser.uid);
       console.log("Search results returned:", users.length, "users");
       console.log("Raw search results:", JSON.stringify(users));
+      
+      if (users.length === 0) {
+        console.log("⚠️ No results found for query:", searchQuery);
+        setNoResults(true);
+        setSearchResults([]);
+        toast({
+          title: "No users found",
+          description: `No sailors matching '${searchQuery}' were found.`,
+          variant: "default"
+        });
+        return;
+      }
       
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
@@ -96,21 +108,24 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       setNoResults(usersWithStatus.length === 0);
       
       if (usersWithStatus.length === 0) {
-        console.log("No results found for query:", searchQuery);
+        console.log("No users with status found");
         toast({
           title: "No users found",
           description: `No sailors matching '${searchQuery}' were found.`,
           variant: "default"
         });
+      } else {
+        console.log("✅ Found users:", usersWithStatus.length);
       }
     } catch (error) {
-      console.error("Search error:", error);
+      console.error("❌ Search error:", error);
       toast({
         title: "Search failed",
         description: "There was a problem searching for users",
         variant: "destructive"
       });
       setNoResults(true);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
