@@ -14,7 +14,9 @@ import {
   serverTimestamp,
   Timestamp,
   onSnapshot,
-  DocumentReference
+  DocumentReference,
+  orderBy,
+  limit
 } from "firebase/firestore";
 import { getUserProfile } from "./profileService";
 
@@ -44,28 +46,32 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
   try {
     console.log("Searching users with query:", searchQuery);
     const usersRef = collection(db, "userProfiles");
-    const q = query(
-      usersRef,
-      where("username", ">=", searchQuery.toLowerCase()),
-      where("username", "<=", searchQuery.toLowerCase() + "\uf8ff")
-    );
     
-    const querySnapshot = await getDocs(q);
+    // Convert to lowercase for case-insensitive search
+    const lowercaseQuery = searchQuery.toLowerCase();
+    
+    // Get all user profiles - we'll filter them in memory
+    // This is more flexible for small datasets than doing a startsWith query
+    const querySnapshot = await getDocs(usersRef);
     const users: any[] = [];
     
     querySnapshot.forEach((doc) => {
       const userData = doc.data();
       // Don't include the current user in search results
       if (userData.userId !== currentUserId) {
-        users.push({
-          id: userData.userId,
-          username: userData.username,
-          profilePicture: userData.profilePicture || null,
-          privacySettings: userData.privacySettings || {
-            isPublicProfile: true,
-            autoAcceptFriends: false
-          }
-        });
+        // Check if username contains the search query (case insensitive)
+        const username = (userData.username || "").toLowerCase();
+        if (username.includes(lowercaseQuery)) {
+          users.push({
+            id: userData.userId,
+            username: userData.username,
+            profilePicture: userData.profilePicture || null,
+            privacySettings: userData.privacySettings || {
+              isPublicProfile: true,
+              autoAcceptFriends: false
+            }
+          });
+        }
       }
     });
     

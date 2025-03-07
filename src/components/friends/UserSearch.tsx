@@ -34,6 +34,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [noResults, setNoResults] = useState(false);
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -53,9 +54,12 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     
     setIsSearching(true);
     setShowResults(true);
+    setNoResults(false);
     
     try {
+      console.log(`Searching for username: "${searchQuery}" from user: ${currentUser.uid}`);
       const users = await searchUsers(searchQuery, currentUser.uid);
+      console.log("Search results:", users);
       
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
@@ -80,6 +84,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       );
       
       setSearchResults(usersWithStatus);
+      setNoResults(usersWithStatus.length === 0);
     } catch (error) {
       console.error("Search error:", error);
       toast({
@@ -87,6 +92,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         description: "There was a problem searching for users",
         variant: "destructive"
       });
+      setNoResults(true);
     } finally {
       setIsSearching(false);
     }
@@ -156,58 +162,66 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         </Button>
       </form>
 
-      <Dialog open={showResults && searchResults.length > 0} onOpenChange={setShowResults}>
+      <Dialog open={showResults} onOpenChange={setShowResults}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Search Results</DialogTitle>
             <DialogDescription>
-              Found {searchResults.length} sailors matching '{searchQuery}'
+              {searchResults.length > 0 
+                ? `Found ${searchResults.length} sailors matching '${searchQuery}'` 
+                : `No sailors found matching '${searchQuery}'`}
             </DialogDescription>
           </DialogHeader>
           
           <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto">
-            {searchResults.map(user => (
-              <div 
-                key={user.id} 
-                className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                    {user.username.charAt(0).toUpperCase()}
+            {searchResults.length > 0 ? (
+              searchResults.map(user => (
+                <div 
+                  key={user.id} 
+                  className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.username}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{user.username}</p>
-                  </div>
+                  
+                  {/* Friendship status buttons */}
+                  {user.status === 'friend' ? (
+                    <div className="flex items-center text-green-600">
+                      <UserCheck size={18} className="mr-1" />
+                      <span className="text-sm">Friend</span>
+                    </div>
+                  ) : user.status === 'pending' ? (
+                    <div className="flex items-center text-maronaut-500">
+                      <Clock size={18} className="mr-1" />
+                      <span className="text-sm">Pending</span>
+                    </div>
+                  ) : user.status === 'received' ? (
+                    <div className="flex items-center text-maronaut-500">
+                      <Clock size={18} className="mr-1" />
+                      <span className="text-sm">Request Received</span>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="sm"
+                      className="bg-maronaut-500 hover:bg-maronaut-600"
+                      onClick={() => handleAddFriend(user)}
+                    >
+                      <UserPlus size={16} className="mr-1" />
+                      Add Friend
+                    </Button>
+                  )}
                 </div>
-                
-                {/* Friendship status buttons */}
-                {user.status === 'friend' ? (
-                  <div className="flex items-center text-green-600">
-                    <UserCheck size={18} className="mr-1" />
-                    <span className="text-sm">Friend</span>
-                  </div>
-                ) : user.status === 'pending' ? (
-                  <div className="flex items-center text-maronaut-500">
-                    <Clock size={18} className="mr-1" />
-                    <span className="text-sm">Pending</span>
-                  </div>
-                ) : user.status === 'received' ? (
-                  <div className="flex items-center text-maronaut-500">
-                    <Clock size={18} className="mr-1" />
-                    <span className="text-sm">Request Received</span>
-                  </div>
-                ) : (
-                  <Button 
-                    size="sm"
-                    className="bg-maronaut-500 hover:bg-maronaut-600"
-                    onClick={() => handleAddFriend(user)}
-                  >
-                    <UserPlus size={16} className="mr-1" />
-                    Add Friend
-                  </Button>
-                )}
+              ))
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-maronaut-500">No users found. Try a different search term.</p>
               </div>
-            ))}
+            )}
           </div>
         </DialogContent>
       </Dialog>
