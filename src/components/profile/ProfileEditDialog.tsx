@@ -60,12 +60,6 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
   // Load user data when dialog opens
   React.useEffect(() => {
     if (isLoaded && currentUser && open) {
-      // Parse display name into first and last name
-      const displayName = currentUser.displayName || "";
-      const nameParts = displayName.split(" ");
-      setFirstName(nameParts[0] || "");
-      setLastName(nameParts.slice(1).join(" ") || "");
-      
       // Load profile data from Firebase
       const loadProfileData = async () => {
         try {
@@ -73,8 +67,8 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
           if (currentUser.uid) {
             const profile = await getUserProfile(currentUser.uid);
             if (profile) {
-              setFirstName(profile.firstName || firstName);
-              setLastName(profile.lastName || lastName);
+              setFirstName(profile.firstName || "");
+              setLastName(profile.lastName || "");
               setLocation(profile.location || "");
               setBio(profile.bio || "");
               setSailingSince(profile.sailingSince || "");
@@ -85,6 +79,12 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
                 length: "",
                 homeMarina: "",
               });
+            } else {
+              // Parse display name into first and last name if profile doesn't exist
+              const displayName = currentUser.displayName || "";
+              const nameParts = displayName.split(" ");
+              setFirstName(nameParts[0] || "");
+              setLastName(nameParts.slice(1).join(" ") || "");
             }
           }
         } catch (error) {
@@ -100,7 +100,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
       
       loadProfileData();
     }
-  }, [isLoaded, currentUser, open, firstName, lastName]);
+  }, [isLoaded, currentUser, open]);
   
   const handleSave = async () => {
     if (!currentUser) return;
@@ -124,6 +124,8 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
       
       // Save custom data to Firestore
       if (currentUser.uid) {
+        const userProfile = await getUserProfile(currentUser.uid);
+        
         await saveUserProfile({
           userId: currentUser.uid,
           firstName,
@@ -133,7 +135,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdate }: ProfileEditD
           sailingSince,
           boatDetails,
           email: currentUser.email || undefined,
-          createdAt: new Date(),
+          createdAt: userProfile?.createdAt || new Date(),
           updatedAt: new Date(),
         });
       }

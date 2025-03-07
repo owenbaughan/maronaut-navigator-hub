@@ -8,7 +8,9 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  Timestamp,
+  serverTimestamp
 } from "firebase/firestore";
 
 export interface BoatDetails {
@@ -28,8 +30,8 @@ export interface UserProfile {
   boatDetails: BoatDetails;
   sailingSince?: string;
   email?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: any;
+  updatedAt: any;
 }
 
 // Create or update a user profile
@@ -38,19 +40,19 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     const userRef = doc(db, "userProfiles", profile.userId);
     const userDoc = await getDoc(userRef);
     
+    // Ensure dates are in the correct format for Firestore
+    const profileData = {
+      ...profile,
+      createdAt: profile.createdAt instanceof Date ? Timestamp.fromDate(profile.createdAt) : profile.createdAt,
+      updatedAt: serverTimestamp()
+    };
+    
     if (!userDoc.exists()) {
       // Create new profile
-      await setDoc(userRef, {
-        ...profile,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      await setDoc(userRef, profileData);
     } else {
       // Update existing profile
-      await updateDoc(userRef, {
-        ...profile,
-        updatedAt: new Date()
-      });
+      await updateDoc(userRef, profileData);
     }
   } catch (error) {
     console.error("Error saving user profile:", error);
@@ -100,8 +102,8 @@ export const createInitialProfile = async (userId: string, email: string, name: 
         length: "",
         homeMarina: ""
       },
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
     
     await saveUserProfile(initialProfile);
