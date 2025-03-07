@@ -3,86 +3,132 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import TripTimeline from '../components/friends/TripTimeline';
-import { Search } from 'lucide-react';
+import { Search, UserCheck, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-
-// Dummy data for friends
-interface Friend {
-  id: string;
-  username: string;
-  photoURL: string | null;
-}
-
-// Dummy data for friend requests
-interface FriendRequest {
-  id: string;
-  username: string;
-  photoURL: string | null;
-  timestamp: string;
-}
+import UserSearch from '@/components/friends/UserSearch';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  FriendData, 
+  FriendRequest, 
+  getFriends, 
+  getFriendRequests, 
+  acceptFriendRequest, 
+  removeFriendRequest 
+} from '@/services/friendService';
 
 const FriendsFeed = () => {
-  const [searchQuery, setSearchQuery] = useState('');
   const { currentUser } = useAuth();
+  const { toast } = useToast();
   
-  // Dummy data for friends list
-  const [friends, setFriends] = useState<Friend[]>([
-    { id: '1', username: 'sailor_jack', photoURL: null },
-    { id: '2', username: 'marina_blue', photoURL: null },
-    { id: '3', username: 'captain_morgan', photoURL: null },
-    { id: '4', username: 'sea_explorer', photoURL: null },
-  ]);
+  // State for friends and requests
+  const [friends, setFriends] = useState<FriendData[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Dummy data for pending friend requests (sent by the user)
-  const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([
-    { id: '5', username: 'ocean_wanderer', photoURL: null, timestamp: '2 days ago' },
-    { id: '6', username: 'island_hopper', photoURL: null, timestamp: '5 days ago' },
-  ]);
-  
-  // Dummy data for incoming friend requests (received by the user)
-  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([
-    { id: '7', username: 'wave_rider', photoURL: null, timestamp: '1 day ago' },
-    { id: '8', username: 'nautical_nancy', photoURL: null, timestamp: '3 days ago' },
-    { id: '9', username: 'sailing_sam', photoURL: null, timestamp: 'Just now' },
-  ]);
-  
+  // Fetch data on component mount and when currentUser changes
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim() === '') return;
     
-    console.log("Searching for:", searchQuery);
-    // Search logic would be implemented here
+    // Fetch friends and requests if user is signed in
+    if (currentUser) {
+      fetchFriendsData();
+    }
+  }, [currentUser]);
+  
+  // Function to fetch all friends data
+  const fetchFriendsData = async () => {
+    if (!currentUser) return;
+    
+    setIsLoading(true);
+    try {
+      // Get friends
+      const friendsList = await getFriends(currentUser.uid);
+      setFriends(friendsList);
+      
+      // Get friend requests
+      const { incomingRequests: incoming, outgoingRequests: outgoing } = await getFriendRequests(currentUser.uid);
+      setIncomingRequests(incoming);
+      setPendingRequests(outgoing);
+    } catch (error) {
+      console.error("Error fetching friends data:", error);
+      toast({
+        title: "Failed to load friends",
+        description: "There was a problem loading your friends and requests",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleAcceptRequest = (requestId: string) => {
-    console.log("Accepting request:", requestId);
-    // In a real implementation, this would call a service to accept the request
-    setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
-    setFriends(prev => [...prev, 
-      ...incomingRequests.filter(req => req.id === requestId)
-        .map(req => ({ id: req.id, username: req.username, photoURL: req.photoURL }))
-    ]);
+  
+  // Handle friend request acceptance
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptFriendRequest(requestId);
+      toast({
+        title: "Friend request accepted",
+        description: "You are now friends with this user",
+      });
+      
+      // Update UI
+      setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
+      await fetchFriendsData(); // Refresh all data
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+      toast({
+        title: "Failed to accept request",
+        description: "There was a problem accepting the friend request",
+        variant: "destructive"
+      });
+    }
   };
-
-  const handleRejectRequest = (requestId: string) => {
-    console.log("Rejecting request:", requestId);
-    // In a real implementation, this would call a service to reject the request
-    setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
+  
+  // Handle friend request rejection
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await removeFriendRequest(requestId);
+      toast({
+        title: "Friend request declined",
+        description: "The friend request has been declined",
+      });
+      
+      // Update UI
+      setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
+    } catch (error) {
+      console.error("Error rejecting friend request:", error);
+      toast({
+        title: "Failed to decline request",
+        description: "There was a problem declining the friend request",
+        variant: "destructive"
+      });
+    }
   };
-
-  const handleCancelRequest = (requestId: string) => {
-    console.log("Cancelling request:", requestId);
-    // In a real implementation, this would call a service to cancel the request
-    setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+  
+  // Handle cancelling a sent friend request
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      await removeFriendRequest(requestId);
+      toast({
+        title: "Friend request cancelled",
+        description: "Your friend request has been cancelled",
+      });
+      
+      // Update UI
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+    } catch (error) {
+      console.error("Error cancelling friend request:", error);
+      toast({
+        title: "Failed to cancel request",
+        description: "There was a problem cancelling the friend request",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -97,24 +143,7 @@ const FriendsFeed = () => {
               </h1>
               
               <div className="glass-panel p-6 animate-fade-in mb-8">
-                <form onSubmit={handleSearch} className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search size={18} className="text-maronaut-400" />
-                  </div>
-                  <Input
-                    type="text"
-                    className="pl-10 pr-4 py-3 border border-maronaut-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-maronaut-300"
-                    placeholder="Search by sailor name or location..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Button
-                    type="submit"
-                    className="absolute inset-y-0 right-0 px-4 bg-maronaut-500 text-white rounded-r-lg hover:bg-maronaut-600 transition-colors"
-                  >
-                    Search
-                  </Button>
-                </form>
+                <UserSearch onUserAdded={fetchFriendsData} />
               </div>
               
               <Tabs defaultValue="trips" className="animate-fade-in mb-10">
@@ -137,7 +166,12 @@ const FriendsFeed = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {friends.length === 0 ? (
+                      {isLoading ? (
+                        <div className="text-center p-6">
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-maronaut-700 mx-auto"></div>
+                          <p className="mt-4 text-maronaut-600">Loading friends...</p>
+                        </div>
+                      ) : friends.length === 0 ? (
                         <div className="text-center p-6 text-maronaut-500">
                           You don't have any friends yet. Search for sailors to connect with!
                         </div>
@@ -147,13 +181,13 @@ const FriendsFeed = () => {
                             <div key={friend.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                  {friend.username.charAt(0).toUpperCase()}
+                                  {friend.username?.charAt(0).toUpperCase() || '?'}
                                 </div>
                                 <div>
                                   <p className="font-medium">{friend.username}</p>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" onClick={() => console.log("View profile", friend.id)}>
+                              <Button variant="outline" size="sm" onClick={() => console.log("View profile", friend.friendId)}>
                                 View Profile
                               </Button>
                             </div>
@@ -175,7 +209,11 @@ const FriendsFeed = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {incomingRequests.length === 0 ? (
+                        {isLoading ? (
+                          <div className="text-center p-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maronaut-700 mx-auto"></div>
+                          </div>
+                        ) : incomingRequests.length === 0 ? (
                           <div className="text-center p-4 text-maronaut-500">
                             No incoming friend requests
                           </div>
@@ -185,11 +223,13 @@ const FriendsFeed = () => {
                               <div key={request.id} className="p-3 rounded-lg border border-maronaut-200">
                                 <div className="flex items-center gap-3 mb-2">
                                   <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                    {request.username.charAt(0).toUpperCase()}
+                                    {request.senderUsername?.charAt(0).toUpperCase() || '?'}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{request.username}</p>
-                                    <p className="text-xs text-maronaut-500">{request.timestamp}</p>
+                                    <p className="font-medium">{request.senderUsername}</p>
+                                    <p className="text-xs text-maronaut-500">
+                                      {request.timestamp ? new Date(request.timestamp.toDate()).toLocaleDateString() : 'Just now'}
+                                    </p>
                                   </div>
                                 </div>
                                 <div className="flex gap-2 mt-2">
@@ -225,7 +265,11 @@ const FriendsFeed = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {pendingRequests.length === 0 ? (
+                        {isLoading ? (
+                          <div className="text-center p-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maronaut-700 mx-auto"></div>
+                          </div>
+                        ) : pendingRequests.length === 0 ? (
                           <div className="text-center p-4 text-maronaut-500">
                             No pending friend requests
                           </div>
@@ -236,11 +280,13 @@ const FriendsFeed = () => {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                      {request.username.charAt(0).toUpperCase()}
+                                      {request.receiverUsername?.charAt(0).toUpperCase() || '?'}
                                     </div>
                                     <div>
-                                      <p className="font-medium">{request.username}</p>
-                                      <p className="text-xs text-maronaut-500">{request.timestamp}</p>
+                                      <p className="font-medium">{request.receiverUsername}</p>
+                                      <p className="text-xs text-maronaut-500">
+                                        {request.timestamp ? new Date(request.timestamp.toDate()).toLocaleDateString() : 'Just now'}
+                                      </p>
                                     </div>
                                   </div>
                                   <Button 
