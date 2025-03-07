@@ -23,9 +23,20 @@ const SignUp = () => {
   const { signUp, checkUsername } = useAuth();
   const navigate = useNavigate();
 
+  // Clear validation state when username changes
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    
+    // Reset validation when input changes
+    if (isUsernameValid !== null) {
+      setIsUsernameValid(null);
+    }
+  };
+
   // Check username availability with debounce
   useEffect(() => {
-    if (!username || username.length < 3) {
+    if (!username || username.trim().length < 3) {
       setIsUsernameValid(null);
       return;
     }
@@ -34,6 +45,7 @@ const SignUp = () => {
       setIsCheckingUsername(true);
       try {
         const isAvailable = await checkUsername(username);
+        console.log(`Username check result for ${username}: ${isAvailable}`);
         setIsUsernameValid(isAvailable);
       } catch (error) {
         console.error("Error checking username:", error);
@@ -105,7 +117,7 @@ const SignUp = () => {
                       id="username"
                       placeholder="Choose a unique username"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={handleUsernameChange}
                       className={`pr-10 ${
                         isUsernameValid === true ? 'border-green-500' : 
                         isUsernameValid === false ? 'border-red-500' : ''

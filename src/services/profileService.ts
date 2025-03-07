@@ -63,8 +63,16 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     const q = query(profilesRef, where("username", "==", trimmedUsername));
     
     const querySnapshot = await getDocs(q);
-    const isAvailable = querySnapshot.empty;
     
+    // Log the number of documents found
+    console.log(`Username check found ${querySnapshot.size} documents with username: ${trimmedUsername}`);
+    
+    // If debugging, log document IDs
+    querySnapshot.forEach(doc => {
+      console.log(`Existing username found in document ID: ${doc.id}`);
+    });
+    
+    const isAvailable = querySnapshot.empty;
     console.log("Username available:", isAvailable);
     return isAvailable;
   } catch (error) {
@@ -83,6 +91,11 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     if (!profile.userId) {
       console.error("Cannot save profile: userId is required");
       throw new Error("userId is required");
+    }
+    
+    // Ensure username is properly set and trimmed
+    if (profile.username) {
+      profile.username = profile.username.trim();
     }
     
     console.log("Saving profile:", profile);
@@ -186,7 +199,7 @@ export const createInitialProfile = async (userId: string, email: string, userna
     
     const initialProfile: UserProfile = {
       userId,
-      username,
+      username: username.trim(),
       email,
       location: "",
       bio: "",

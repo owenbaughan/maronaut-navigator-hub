@@ -40,27 +40,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkUsername = async (username: string): Promise<boolean> => {
     if (!username || username.trim().length < 3) {
+      console.log("Username too short, not checking availability");
       return false;
     }
-    return await isUsernameAvailable(username);
+    
+    console.log("AuthContext: Checking username availability:", username);
+    const result = await isUsernameAvailable(username);
+    console.log("AuthContext: Username availability result:", result);
+    return result;
   };
 
   const signUp = async (username: string, email: string, password: string) => {
     try {
       // First check if the username is available
-      const isAvailable = await isUsernameAvailable(username);
+      const isAvailable = await isUsernameAvailable(username.trim());
       if (!isAvailable) {
+        console.log("Username already taken:", username);
         throw new Error("Username already taken. Please choose another one.");
       }
       
+      console.log("Creating new user account with username:", username);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
       // Update the user's display name with the username
-      await updateProfile(user, { displayName: username });
+      await updateProfile(user, { displayName: username.trim() });
       
       // Create initial profile with username
-      await createInitialProfile(user.uid, email, username);
+      await createInitialProfile(user.uid, email, username.trim());
       
       toast({
         title: "Account created",
