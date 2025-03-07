@@ -13,6 +13,14 @@ import {
   limit
 } from "firebase/firestore";
 
+export interface PrivacySettings {
+  isPublicProfile: boolean;
+  autoAcceptFriends: boolean;
+  showEmail: boolean;
+  showLocation: boolean;
+  showBoatDetails: boolean;
+}
+
 export interface BoatDetails {
   name: string;
   type: string;
@@ -30,6 +38,7 @@ export interface UserProfile {
   boatDetails: BoatDetails;
   sailingSince?: string;
   email?: string;
+  privacySettings?: PrivacySettings;
   createdAt: Date | Timestamp;
   updatedAt: Date | Timestamp;
 }
@@ -95,6 +104,14 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         // Create new profile with server timestamp
         await setDoc(userRef, {
           ...profileToSave,
+          // Set default privacy settings for new users
+          privacySettings: profileToSave.privacySettings || {
+            isPublicProfile: true,
+            autoAcceptFriends: false,
+            showEmail: false,
+            showLocation: true,
+            showBoatDetails: true
+          },
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -186,5 +203,51 @@ export const createInitialProfile = async (userId: string, email: string, userna
     
     await saveUserProfile(initialProfile);
     console.log("Successfully created initial profile with username:", username);
+  }
+};
+
+// Get a filtered user profile based on privacy settings
+export const getPublicUserProfile = async (userId: string): Promise<Partial<UserProfile> | null> => {
+  try {
+    const fullProfile = await getUserProfile(userId);
+    
+    if (!fullProfile) return null;
+    
+    // If profile is not public and not specifically requested by friend, return limited info
+    if (fullProfile.privacySettings && !fullProfile.privacySettings.isPublicProfile) {
+      return {
+        userId: fullProfile.userId,
+        username: fullProfile.username,
+        // Only return minimal information
+      };
+    }
+    
+    // Otherwise, create a filtered version based on privacy settings
+    const publicProfile: Partial<UserProfile> = {
+      userId: fullProfile.userId,
+      username: fullProfile.username,
+      firstName: fullProfile.firstName,
+      lastName: fullProfile.lastName,
+      bio: fullProfile.bio,
+      sailingSince: fullProfile.sailingSince,
+    };
+    
+    // Add optional fields based on privacy settings
+    if (!fullProfile.privacySettings || fullProfile.privacySettings.showEmail) {
+      publicProfile.email = fullProfile.email;
+    }
+    
+    if (!fullProfile.privacySettings || fullProfile.privacySettings.showLocation) {
+      publicProfile.location = fullProfile.location;
+    }
+    
+    if (!fullProfile.privacySettings || fullProfile.privacySettings.showBoatDetails) {
+      publicProfile.boatDetails = fullProfile.boatDetails;
+    }
+    
+    return publicProfile;
+  } catch (error) {
+    console.error("Error getting public user profile:", error);
+    return null;
   }
 };

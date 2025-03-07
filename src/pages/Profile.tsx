@@ -3,29 +3,31 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { Settings, Edit, MapPin, Ship, Activity, Award, Star, Bookmark, LogOut, Calendar } from 'lucide-react';
-import ProfileEditDialog from '../components/profile/ProfileEditDialog';
+import { Settings, Edit, User, Mail, Shield, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getUserProfile, BoatDetails, UserProfile } from '@/services/profileService';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
+import ProfileEditDialog from '../components/profile/ProfileEditDialog';
+import { getUserProfile, saveUserProfile, BoatDetails, UserProfile } from '@/services/profileService';
 
 const Profile = () => {
   const { currentUser, isLoaded, isSignedIn } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("personal");
+  
+  // Privacy settings
+  const [isPublicProfile, setIsPublicProfile] = useState(true);
+  const [autoAcceptFriends, setAutoAcceptFriends] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const [showLocation, setShowLocation] = useState(true);
+  const [showBoatDetails, setShowBoatDetails] = useState(true);
   
   // State for user data
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [bio, setBio] = useState("");
-  const [location, setLocation] = useState("");
-  const [sailingSince, setSailingSince] = useState("");
-  const [boatDetails, setBoatDetails] = useState<BoatDetails>({
-    name: "",
-    type: "",
-    length: "",
-    homeMarina: "",
-  });
   
   // Load user data
   const loadProfileData = async () => {
@@ -37,25 +39,17 @@ const Profile = () => {
         if (profile) {
           console.log("Profile data loaded:", profile);
           setProfileData(profile);
-          setFirstName(profile.firstName || "");
-          setLastName(profile.lastName || "");
-          setBio(profile.bio || "");
-          setLocation(profile.location || "");
-          setSailingSince(profile.sailingSince || "");
-          setBoatDetails(profile.boatDetails || {
-            name: "",
-            type: "",
-            length: "",
-            homeMarina: "",
-          });
+          
+          // Initialize privacy settings from profile if they exist
+          if (profile.privacySettings) {
+            setIsPublicProfile(profile.privacySettings.isPublicProfile ?? true);
+            setAutoAcceptFriends(profile.privacySettings.autoAcceptFriends ?? false);
+            setShowEmail(profile.privacySettings.showEmail ?? false);
+            setShowLocation(profile.privacySettings.showLocation ?? true);
+            setShowBoatDetails(profile.privacySettings.showBoatDetails ?? true);
+          }
         } else {
           console.log("No profile data found for user:", currentUser.uid);
-          // Set default first and last name from display name if available
-          if (currentUser.displayName) {
-            const nameParts = currentUser.displayName.split(' ');
-            setFirstName(nameParts[0] || "");
-            setLastName(nameParts.slice(1).join(' ') || "");
-          }
         }
       } catch (error) {
         console.error("Error loading profile data:", error);
@@ -80,10 +74,48 @@ const Profile = () => {
   const handleProfileUpdated = () => {
     console.log("Profile updated, refreshing data");
     loadProfileData();
+    toast({
+      title: "Profile updated",
+      description: "Your profile information has been updated successfully."
+    });
   };
   
-  // Get full name for display
-  const fullName = `${firstName} ${lastName}`.trim() || "Sailor";
+  // Function to save privacy settings
+  const savePrivacySettings = async () => {
+    if (!currentUser || !profileData) return;
+    
+    try {
+      const updatedProfile = {
+        ...profileData,
+        privacySettings: {
+          isPublicProfile,
+          autoAcceptFriends,
+          showEmail,
+          showLocation,
+          showBoatDetails
+        },
+        updatedAt: new Date()
+      };
+      
+      await saveUserProfile(updatedProfile);
+      
+      toast({
+        title: "Privacy settings saved",
+        description: "Your privacy preferences have been updated successfully."
+      });
+    } catch (error) {
+      console.error("Error saving privacy settings:", error);
+      toast({
+        title: "Error saving settings",
+        description: "There was a problem saving your privacy settings.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -96,15 +128,8 @@ const Profile = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-maronaut-500"></div>
               </div>
             ) : (
-              <div className="max-w-5xl mx-auto">
-                <div className="glass-panel p-8 mb-8 relative animate-fade-in">
-                  <button 
-                    className="absolute top-6 right-6 p-2 rounded-full bg-maronaut-100 text-maronaut-600 hover:bg-maronaut-200 transition-colors"
-                    onClick={handleOpenEditDialog}
-                  >
-                    <Settings size={20} />
-                  </button>
-                  
+              <div className="max-w-4xl mx-auto">
+                <div className="glass-panel p-8 mb-8 animate-fade-in">
                   <div className="flex flex-col md:flex-row items-center gap-8">
                     <div className="relative">
                       <img 
@@ -122,216 +147,174 @@ const Profile = () => {
                     
                     <div className="text-center md:text-left flex-1">
                       <h1 className="text-2xl md:text-3xl font-bold text-maronaut-700 mb-2">
-                        {fullName}
+                        Profile Settings
                       </h1>
-                      <div className="flex flex-wrap justify-center md:justify-start gap-4 text-maronaut-600 mb-4">
-                        {location && (
-                          <div className="flex items-center">
-                            <MapPin size={16} className="mr-1" />
-                            {location}
-                          </div>
-                        )}
-                        {sailingSince && (
-                          <div className="flex items-center">
-                            <Calendar size={16} className="mr-1" />
-                            Sailing since {sailingSince}
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-maronaut-600/80 max-w-xl">
-                        {bio || "Tell us about yourself and your sailing experience by editing your profile."}
+                      <p className="text-maronaut-600/80 mb-4">
+                        Manage your account settings and privacy preferences
                       </p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-maronaut-100">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-maronaut-700">24</div>
-                      <div className="text-sm text-maronaut-600">Trips</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-maronaut-700">376</div>
-                      <div className="text-sm text-maronaut-600">Nautical Miles</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-maronaut-700">12</div>
-                      <div className="text-sm text-maronaut-600">Reviews</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-maronaut-700">8</div>
-                      <div className="text-sm text-maronaut-600">Badges</div>
+                      <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleOpenEditDialog}
+                        >
+                          <Settings size={16} className="mr-2" />
+                          Edit Profile
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => window.location.href = "/dashboard"}
+                        >
+                          View Dashboard
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="md:col-span-2 space-y-8">
-                    <div className="glass-panel p-6 animate-fade-in animate-delay-1">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-maronaut-700">
-                          Recent Trips
-                        </h2>
-                        <button className="text-sm text-maronaut-500 font-medium">
-                          View All
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="p-4 bg-white rounded-xl shadow-sm border border-maronaut-100">
-                          <div className="flex justify-between mb-2">
-                            <h3 className="font-medium text-maronaut-700">San Francisco Bay Cruise</h3>
-                            <div className="flex items-center text-maronaut-500">
-                              <Activity size={16} className="mr-1" />
-                              12.4 nm
+                <div className="glass-panel p-6 animate-fade-in">
+                  <Tabs value={activeTab} onValueChange={handleTabChange}>
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                      <TabsTrigger value="personal">
+                        <User size={16} className="mr-2" />
+                        Personal Info
+                      </TabsTrigger>
+                      <TabsTrigger value="privacy">
+                        <Shield size={16} className="mr-2" />
+                        Privacy
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="personal" className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-xl">Account Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>Email</Label>
+                              <div className="flex items-center mt-1">
+                                <Mail size={16} className="text-maronaut-500 mr-2" />
+                                <span className="text-maronaut-700">{currentUser?.email || "No email set"}</span>
+                              </div>
+                              <p className="text-sm text-maronaut-500 mt-1">Your email address is used for account recovery</p>
+                            </div>
+                            <div>
+                              <Label>Username</Label>
+                              <div className="flex items-center mt-1">
+                                <User size={16} className="text-maronaut-500 mr-2" />
+                                <span className="text-maronaut-700">{profileData?.username || currentUser?.displayName || "Not set"}</span>
+                              </div>
+                              <p className="text-sm text-maronaut-500 mt-1">This is how others see you on Maronaut</p>
                             </div>
                           </div>
-                          <p className="text-sm text-maronaut-600 mb-3">
-                            A beautiful day sailing around Alcatraz and under the Golden Gate Bridge.
-                          </p>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-maronaut-500">Jul 15, 2023</span>
-                            <button className="text-maronaut-500 hover:text-maronaut-600 font-medium">
-                              Details
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 bg-white rounded-xl shadow-sm border border-maronaut-100">
-                          <div className="flex justify-between mb-2">
-                            <h3 className="font-medium text-maronaut-700">Half Moon Bay Overnight</h3>
-                            <div className="flex items-center text-maronaut-500">
-                              <Activity size={16} className="mr-1" />
-                              28.6 nm
+                        </CardContent>
+                        <CardFooter>
+                          <Button onClick={handleOpenEditDialog}>Edit Profile</Button>
+                        </CardFooter>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-xl">Account Management</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <Button 
+                            variant="destructive"
+                            className="w-full md:w-auto"
+                            onClick={() => window.location.href = "/signin"}
+                          >
+                            <LogOut size={16} className="mr-2" />
+                            Sign Out
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="privacy" className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-xl">Privacy Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label htmlFor="public-profile">Public Profile</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Allow anyone to view your profile
+                              </p>
                             </div>
+                            <Switch 
+                              id="public-profile" 
+                              checked={isPublicProfile}
+                              onCheckedChange={setIsPublicProfile}
+                            />
                           </div>
-                          <p className="text-sm text-maronaut-600 mb-3">
-                            Weekend trip to Half Moon Bay with an overnight stay at the marina.
-                          </p>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-maronaut-500">Jun 24, 2023</span>
-                            <button className="text-maronaut-500 hover:text-maronaut-600 font-medium">
-                              Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="glass-panel p-6 animate-fade-in animate-delay-2">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-maronaut-700">
-                          My Reviews
-                        </h2>
-                        <button className="text-sm text-maronaut-500 font-medium">
-                          View All
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="p-4 bg-white rounded-xl shadow-sm border border-maronaut-100">
-                          <div className="flex justify-between mb-2">
-                            <h3 className="font-medium text-maronaut-700">Sausalito Yacht Harbor</h3>
-                            <div className="flex items-center text-maronaut-500">
-                              <Star size={16} fill="currentColor" className="mr-1" />
-                              4.5
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label htmlFor="auto-accept">Auto-Accept Friend Requests</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Automatically accept all friend requests
+                              </p>
                             </div>
+                            <Switch 
+                              id="auto-accept" 
+                              checked={autoAcceptFriends}
+                              onCheckedChange={setAutoAcceptFriends}
+                            />
                           </div>
-                          <p className="text-sm text-maronaut-600 mb-3">
-                            Great facilities and friendly staff. The showers are clean and the location is perfect.
-                          </p>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-maronaut-500">May 18, 2023</span>
-                            <button className="text-maronaut-500 hover:text-maronaut-600 font-medium">
-                              View
-                            </button>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label htmlFor="show-email">Show Email</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Allow others to see your email address
+                              </p>
+                            </div>
+                            <Switch 
+                              id="show-email" 
+                              checked={showEmail}
+                              onCheckedChange={setShowEmail}
+                            />
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-8">
-                    <div className="glass-panel p-6 animate-fade-in animate-delay-3">
-                      <h2 className="text-xl font-semibold text-maronaut-700 mb-4">
-                        Achievements
-                      </h2>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-maronaut-100 flex items-center justify-center text-maronaut-500 mb-2">
-                            <Award size={28} />
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label htmlFor="show-location">Show Location</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Display your location on your profile
+                              </p>
+                            </div>
+                            <Switch 
+                              id="show-location" 
+                              checked={showLocation}
+                              onCheckedChange={setShowLocation}
+                            />
                           </div>
-                          <span className="text-sm text-center text-maronaut-600">First Voyage</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-maronaut-100 flex items-center justify-center text-maronaut-500 mb-2">
-                            <Ship size={28} />
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <Label htmlFor="show-boat">Show Boat Details</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Share your boat information with others
+                              </p>
+                            </div>
+                            <Switch 
+                              id="show-boat" 
+                              checked={showBoatDetails}
+                              onCheckedChange={setShowBoatDetails}
+                            />
                           </div>
-                          <span className="text-sm text-center text-maronaut-600">100nm Club</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-maronaut-100 flex items-center justify-center text-maronaut-500 mb-2">
-                            <Star size={28} />
-                          </div>
-                          <span className="text-sm text-center text-maronaut-600">10 Reviews</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-maronaut-100 flex items-center justify-center text-maronaut-500 mb-2">
-                            <Bookmark size={28} />
-                          </div>
-                          <span className="text-sm text-center text-maronaut-600">5 Harbors</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="glass-panel p-6 animate-fade-in animate-delay-4">
-                      <h2 className="text-xl font-semibold text-maronaut-700 mb-4">
-                        Boat Details
-                      </h2>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="text-sm font-medium text-maronaut-600">Boat Name</h3>
-                          <p className="text-maronaut-700">{boatDetails.name || "Not specified"}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-maronaut-600">Type</h3>
-                          <p className="text-maronaut-700">{boatDetails.type || "Not specified"}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-maronaut-600">Length</h3>
-                          <p className="text-maronaut-700">{boatDetails.length || "Not specified"}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-maronaut-600">Home Marina</h3>
-                          <p className="text-maronaut-700">{boatDetails.homeMarina || "Not specified"}</p>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        variant="ghost"
-                        className="w-full mt-4 py-2 text-center text-maronaut-500 hover:text-maronaut-600 font-medium border-t border-maronaut-100"
-                        onClick={handleOpenEditDialog}
-                      >
-                        Edit Boat Details
-                      </Button>
-                    </div>
-                    
-                    <Button 
-                      variant="ghost"
-                      className="w-full p-3 text-center flex items-center justify-center text-red-500 hover:text-red-600 font-medium glass-panel animate-fade-in animate-delay-5"
-                      onClick={() => window.location.href = "/signin"}
-                    >
-                      <LogOut size={18} className="mr-2" />
-                      Sign Out
-                    </Button>
-                  </div>
+                        </CardContent>
+                        <CardFooter>
+                          <Button onClick={savePrivacySettings}>Save Privacy Settings</Button>
+                        </CardFooter>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
             )}
