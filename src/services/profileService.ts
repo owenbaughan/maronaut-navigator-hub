@@ -163,7 +163,7 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
           // Set default privacy settings for new users
           privacySettings: profileToSave.privacySettings || {
             isPublicProfile: true,
-            autoAcceptFriends: false,
+            autoAcceptFriends: true, // Changed default to true
             showEmail: false,
             showLocation: true,
             showBoatDetails: true
