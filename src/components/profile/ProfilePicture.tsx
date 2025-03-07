@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,13 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(url);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Update internal state when url prop changes
+  useEffect(() => {
+    setImageUrl(url);
+  }, [url]);
   
   // Map size to dimensions
   const sizeClasses = {
@@ -74,8 +80,18 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         return;
       }
       
+      // Create a local preview immediately
+      const objectUrl = URL.createObjectURL(file);
+      setImageUrl(objectUrl);
+      
       // Upload file to Firebase Storage
       const downloadURL = await uploadProfilePicture(currentUser.uid, file);
+      
+      // Revoke the URL to avoid memory leaks
+      URL.revokeObjectURL(objectUrl);
+      
+      // Set the final cloud URL
+      setImageUrl(downloadURL);
       
       // Update Firebase Auth profile
       await updateProfile(currentUser, {
@@ -92,6 +108,8 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         description: "Your profile picture has been successfully updated."
       });
       
+      console.log("Profile picture upload succeeded. URL:", downloadURL);
+      
     } catch (error) {
       console.error("Error uploading profile picture:", error);
       toast({
@@ -99,6 +117,8 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         description: "Failed to upload profile picture. Please try again.",
         variant: "destructive"
       });
+      // Reset to original URL if upload failed
+      setImageUrl(url);
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -114,7 +134,7 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         className={`${sizeClasses[size]} ${editable ? 'cursor-pointer' : ''} border-2 border-white shadow-lg`}
         onClick={handleClick}
       >
-        <AvatarImage src={url} alt={username || "Profile"} />
+        <AvatarImage src={imageUrl} alt={username || "Profile"} />
         <AvatarFallback className="bg-maronaut-500 text-white">
           {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : getInitials(username)}
         </AvatarFallback>
@@ -129,19 +149,23 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
             accept="image/*"
             onChange={handleFileChange}
           />
-          <Button
-            size="icon"
-            variant="secondary"
-            className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md"
-            onClick={handleClick}
-            disabled={isUploading}
+          <div
+            className={`absolute bottom-0 right-0 rounded-full shadow-md ${isUploading ? 'bg-gray-200' : 'bg-white'}`}
           >
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Camera className="h-4 w-4" />
-            )}
-          </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="h-8 w-8 rounded-full"
+              onClick={handleClick}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </>
       )}
     </div>
