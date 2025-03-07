@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -14,6 +15,8 @@ const Profile = () => {
   
   // State for user data
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
   const [sailingSince, setSailingSince] = useState("");
@@ -34,6 +37,8 @@ const Profile = () => {
         if (profile) {
           console.log("Profile data loaded:", profile);
           setProfileData(profile);
+          setFirstName(profile.firstName || "");
+          setLastName(profile.lastName || "");
           setBio(profile.bio || "");
           setLocation(profile.location || "");
           setSailingSince(profile.sailingSince || "");
@@ -45,6 +50,12 @@ const Profile = () => {
           });
         } else {
           console.log("No profile data found for user:", currentUser.uid);
+          // Set default first and last name from display name if available
+          if (currentUser.displayName) {
+            const nameParts = currentUser.displayName.split(' ');
+            setFirstName(nameParts[0] || "");
+            setLastName(nameParts.slice(1).join(' ') || "");
+          }
         }
       } catch (error) {
         console.error("Error loading profile data:", error);
@@ -70,6 +81,9 @@ const Profile = () => {
     console.log("Profile updated, refreshing data");
     loadProfileData();
   };
+  
+  // Get full name for display
+  const fullName = `${firstName} ${lastName}`.trim() || "Sailor";
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -108,7 +122,7 @@ const Profile = () => {
                     
                     <div className="text-center md:text-left flex-1">
                       <h1 className="text-2xl md:text-3xl font-bold text-maronaut-700 mb-2">
-                        {profileData?.name || currentUser?.displayName || "Sailor"}
+                        {fullName}
                       </h1>
                       <div className="flex flex-wrap justify-center md:justify-start gap-4 text-maronaut-600 mb-4">
                         {location && (

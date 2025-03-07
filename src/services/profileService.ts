@@ -22,7 +22,8 @@ export interface BoatDetails {
 
 export interface UserProfile {
   userId: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   location: string;
   bio: string;
   boatDetails: BoatDetails;
@@ -153,9 +154,15 @@ export const createInitialProfile = async (userId: string, email: string, name: 
   
   if (!existingProfile) {
     console.log("Creating initial profile for new user:", userId);
+    // Split name into first and last name
+    const nameParts = name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
     const initialProfile: UserProfile = {
       userId,
-      name,
+      firstName,
+      lastName,
       email,
       location: "",
       bio: "",

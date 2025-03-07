@@ -1,10 +1,36 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { MapPin, Clock, Compass, Wind, Anchor, Share2 } from 'lucide-react';
+import { getUserProfile } from '@/services/profileService';
 
 const Dashboard = () => {
+  const { currentUser, isLoaded } = useAuth();
+  const [firstName, setFirstName] = useState<string>('Sailor');
+  
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (isLoaded && currentUser?.uid) {
+        try {
+          const profile = await getUserProfile(currentUser.uid);
+          if (profile?.firstName) {
+            setFirstName(profile.firstName);
+          } else if (currentUser.displayName) {
+            // Fallback to first part of display name if profile not found
+            const nameParts = currentUser.displayName.split(' ');
+            setFirstName(nameParts[0] || 'Sailor');
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+        }
+      }
+    };
+    
+    loadUserProfile();
+  }, [isLoaded, currentUser]);
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -13,7 +39,7 @@ const Dashboard = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h1 className="text-3xl md:text-4xl font-bold text-maronaut-700 mb-6 animate-fade-in">
-                Welcome back, Sailor
+                Welcome back, Captain {firstName}
               </h1>
               <p className="text-lg text-maronaut-600/80 mb-8 animate-fade-in animate-delay-1">
                 Track your trips, monitor weather conditions, and view your sailing statistics.
