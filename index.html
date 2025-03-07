@@ -7,11 +7,43 @@
     <title>Maronaut Navigator Hub</title>
     <meta name="description" content="Sailing community platform for trip planning and connecting with fellow mariners" />
     <meta name="author" content="Maronaut" />
-    <!-- Use relative paths for assets -->
+    <!-- SEO metadata -->
+    <meta name="keywords" content="sailing, marine, community, trip planning, sailors, navigation, boating" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph tags for social sharing -->
+    <meta property="og:title" content="Maronaut Navigator Hub" />
+    <meta property="og:description" content="Sailing community platform for trip planning and connecting with fellow mariners" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.maronaut.com" />
     <meta property="og:image" content="./og-image.png" />
+    
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Maronaut Navigator Hub" />
+    <meta name="twitter:description" content="Sailing community platform for trip planning and connecting with fellow mariners" />
+    <meta name="twitter:image" content="./og-image.png" />
+    
+    <!-- Canonical URL to avoid duplicate content issues -->
+    <link rel="canonical" href="https://www.maronaut.com" />
+    
+    <!-- Favicon and other assets -->
     <link rel="icon" href="./favicon.ico" />
-    <!-- Preconnect to Clerk domain to improve performance -->
+    
+    <!-- Preconnect to improve performance -->
     <link rel="preconnect" href="https://clerk.accounts.dev" />
+    
+    <!-- Structured data for better Google understanding -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Maronaut",
+        "url": "https://www.maronaut.com",
+        "logo": "https://www.maronaut.com/og-image.png",
+        "description": "Sailing community platform for trip planning and connecting with fellow mariners"
+      }
+    </script>
   </head>
 
   <body>
