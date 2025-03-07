@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -28,12 +27,10 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
   const [imageUrl, setImageUrl] = useState<string | undefined>(url);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Update internal state when url prop changes
   useEffect(() => {
     setImageUrl(url);
   }, [url]);
   
-  // Map size to dimensions
   const sizeClasses = {
     sm: 'w-10 h-10',
     md: 'w-16 h-16',
@@ -41,7 +38,6 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
     xl: 'w-32 h-32',
   };
   
-  // Get initials for the fallback
   const getInitials = (name?: string): string => {
     if (!name) return '?';
     return name.substring(0, 2).toUpperCase();
@@ -60,7 +56,6 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
     try {
       setIsUploading(true);
       
-      // Only allow images
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Invalid file type",
@@ -70,7 +65,6 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         return;
       }
       
-      // Limit file size to 5MB
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -80,25 +74,20 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         return;
       }
       
-      // Create a local preview immediately
       const objectUrl = URL.createObjectURL(file);
       setImageUrl(objectUrl);
       
-      // Upload file to Firebase Storage
       const downloadURL = await uploadProfilePicture(currentUser.uid, file);
+      console.log("Profile picture upload succeeded. URL:", downloadURL);
       
-      // Revoke the URL to avoid memory leaks
       URL.revokeObjectURL(objectUrl);
       
-      // Set the final cloud URL
       setImageUrl(downloadURL);
       
-      // Update Firebase Auth profile
       await updateProfile(currentUser, {
         photoURL: downloadURL
       });
       
-      // Call callback if provided
       if (onPictureUpdated) {
         onPictureUpdated(downloadURL);
       }
@@ -108,8 +97,6 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         description: "Your profile picture has been successfully updated."
       });
       
-      console.log("Profile picture upload succeeded. URL:", downloadURL);
-      
     } catch (error) {
       console.error("Error uploading profile picture:", error);
       toast({
@@ -117,11 +104,9 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         description: "Failed to upload profile picture. Please try again.",
         variant: "destructive"
       });
-      // Reset to original URL if upload failed
       setImageUrl(url);
     } finally {
       setIsUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }

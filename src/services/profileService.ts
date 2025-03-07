@@ -1,5 +1,4 @@
-
-import { db } from "../lib/firebase";
+import { db, storage } from "../lib/firebase";
 import { 
   doc, 
   getDoc, 
@@ -13,7 +12,7 @@ import {
   Timestamp,
   limit
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export interface PrivacySettings {
   isPublicProfile: boolean;
@@ -71,18 +70,17 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
   try {
     console.log("Uploading profile picture for user:", userId);
     
-    // Initialize Firebase Storage
-    const storage = getStorage();
-    
-    // Create a storage reference
-    const profilePicRef = ref(storage, `profilePictures/${userId}`);
+    // Create a unique file name with timestamp to avoid cache issues
+    const timestamp = new Date().getTime();
+    const storageRef = ref(storage, `profilePictures/${userId}_${timestamp}`);
     
     // Upload the file
-    const snapshot = await uploadBytes(profilePicRef, file);
+    console.log("Uploading to Firebase Storage...");
+    const snapshot = await uploadBytes(storageRef, file);
     console.log("Upload successful:", snapshot);
     
     // Get the download URL
-    const downloadURL = await getDownloadURL(profilePicRef);
+    const downloadURL = await getDownloadURL(snapshot.ref);
     console.log("Download URL:", downloadURL);
     
     // Update user profile with the new picture URL
