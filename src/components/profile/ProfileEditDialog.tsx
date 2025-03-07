@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -89,7 +88,15 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
   }, [isLoaded, currentUser, open]);
   
   const handleSave = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.error("No current user found");
+      toast({
+        title: "Error saving profile",
+        description: "You must be signed in to save your profile.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
     try {
@@ -113,6 +120,8 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
         createdAt: profileData.createdAt || new Date(),
         updatedAt: new Date(),
       };
+      
+      console.log("Saving profile with data:", updatedProfile);
       
       // Save custom data to Firebase
       await saveUserProfile(updatedProfile);

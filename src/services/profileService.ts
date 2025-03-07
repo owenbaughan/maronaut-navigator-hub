@@ -49,14 +49,28 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 // Create or update a user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
+    // Ensure we have a valid userId before proceeding
+    if (!profile.userId) {
+      console.error("Cannot save profile: userId is required");
+      throw new Error("userId is required");
+    }
+    
     console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
     const userDoc = await getDoc(userRef);
     
+    // Convert Date objects to Firestore timestamps
+    const profileToSave = {
+      ...profile,
+      // Only convert Date objects, leave Timestamps as they are
+      createdAt: profile.createdAt instanceof Date ? profile.createdAt : profile.createdAt,
+      updatedAt: new Date() // Always update the updatedAt timestamp
+    };
+    
     if (!userDoc.exists()) {
       // Create new profile with server timestamp
       await setDoc(userRef, {
-        ...profile,
+        ...profileToSave,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -65,7 +79,7 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       // Update existing profile with server timestamp, preserving original createdAt
       const existingData = userDoc.data();
       await updateDoc(userRef, {
-        ...profile,
+        ...profileToSave,
         createdAt: existingData.createdAt, // Preserve original creation date
         updatedAt: serverTimestamp()
       });
@@ -85,6 +99,11 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
 // Get a user profile by user ID
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
+    if (!userId) {
+      console.error("Cannot get profile: userId is required");
+      return null;
+    }
+    
     console.log("Getting profile for user:", userId);
     // Try to get from Firestore
     const userRef = doc(db, "userProfiles", userId);
