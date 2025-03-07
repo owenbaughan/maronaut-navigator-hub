@@ -35,6 +35,12 @@ const SignUp = () => {
       return;
     }
     
+    // Check if username contains only letters and numbers
+    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+      setError('Username can only contain letters and numbers (no spaces or special characters)');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -90,6 +96,9 @@ const SignUp = () => {
                   </div>
                   {username && username.length < 3 && (
                     <p className="text-xs text-amber-500">Username must be at least 3 characters</p>
+                  )}
+                  {username && !/^[a-zA-Z0-9]+$/.test(username) && (
+                    <p className="text-xs text-amber-500">Username can only contain letters and numbers</p>
                   )}
                 </div>
                 
