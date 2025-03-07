@@ -35,8 +35,12 @@ const FriendsFeed = () => {
                 </TabsContent>
                 
                 <TabsContent value="friends" className="space-y-8">
-                  <FriendSearch />
-                  <FriendsList />
+                  <div className="w-full">
+                    <FriendSearch />
+                    <div className="mt-8">
+                      <FriendsList />
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
