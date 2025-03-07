@@ -1,10 +1,7 @@
+
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
-import { Ship, MapPin, User, Mail, Calendar } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { getUserProfile, saveUserProfile, BoatDetails, UserProfile } from "@/services/profileService";
 import { updateProfile } from "@/lib/firebase";
+import PersonalInfoSection from "./PersonalInfoSection";
+import BoatDetailsSection from "./BoatDetailsSection";
 
 interface ProfileEditDialogProps {
   open: boolean;
@@ -160,134 +159,22 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
         </DialogHeader>
         
         <div className="grid gap-6 py-4">
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium">Personal Information</h3>
-            
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User size={16} />
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your full name"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail size={16} />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  value={currentUser?.email || ""}
-                  disabled
-                  placeholder="Your email"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email can only be changed in account settings.
-                </p>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin size={16} />
-                  Location
-                </Label>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City, State"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="sailingSince" className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  Sailing Since
-                </Label>
-                <Input
-                  id="sailingSince"
-                  value={sailingSince}
-                  onChange={(e) => setSailingSince(e.target.value)}
-                  placeholder="e.g., 2015"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="bio" className="flex items-center gap-2">
-                  About You
-                </Label>
-                <Textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Share a bit about yourself and your sailing experience"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
+          <PersonalInfoSection
+            name={name}
+            setName={setName}
+            email={currentUser?.email}
+            location={location}
+            setLocation={setLocation}
+            sailingSince={sailingSince}
+            setSailingSince={setSailingSince}
+            bio={bio}
+            setBio={setBio}
+          />
           
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium">Boat Details</h3>
-            
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="boatName" className="flex items-center gap-2">
-                  <Ship size={16} />
-                  Boat Name
-                </Label>
-                <Input
-                  id="boatName"
-                  value={boatDetails.name}
-                  onChange={(e) => setBoatDetails(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Name of your vessel"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="boatType">
-                  Type
-                </Label>
-                <Input
-                  id="boatType"
-                  value={boatDetails.type}
-                  onChange={(e) => setBoatDetails(prev => ({ ...prev, type: e.target.value }))}
-                  placeholder="Make and model"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="boatLength">
-                  Length
-                </Label>
-                <Input
-                  id="boatLength"
-                  value={boatDetails.length}
-                  onChange={(e) => setBoatDetails(prev => ({ ...prev, length: e.target.value }))}
-                  placeholder="Length in feet"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="homeMarina">
-                  Home Marina
-                </Label>
-                <Input
-                  id="homeMarina"
-                  value={boatDetails.homeMarina}
-                  onChange={(e) => setBoatDetails(prev => ({ ...prev, homeMarina: e.target.value }))}
-                  placeholder="Where your boat is based"
-                />
-              </div>
-            </div>
-          </div>
+          <BoatDetailsSection
+            boatDetails={boatDetails}
+            setBoatDetails={setBoatDetails}
+          />
         </div>
         
         <DialogFooter>
