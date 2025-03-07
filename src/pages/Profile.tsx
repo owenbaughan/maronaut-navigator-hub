@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import ProfileEditDialog from '../components/profile/ProfileEditDialog';
+import ProfilePicture from '../components/profile/ProfilePicture';
 import { getUserProfile, saveUserProfile, BoatDetails, UserProfile } from '@/services/profileService';
 
 const Profile = () => {
@@ -18,6 +19,7 @@ const Profile = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("personal");
+  const [profilePicture, setProfilePicture] = useState<string | undefined>(undefined);
   
   // Privacy settings
   const [isPublicProfile, setIsPublicProfile] = useState(true);
@@ -39,6 +41,7 @@ const Profile = () => {
         if (profile) {
           console.log("Profile data loaded:", profile);
           setProfileData(profile);
+          setProfilePicture(profile.profilePicture || currentUser.photoURL || undefined);
           
           // Initialize privacy settings from profile if they exist
           if (profile.privacySettings) {
@@ -50,6 +53,7 @@ const Profile = () => {
           }
         } else {
           console.log("No profile data found for user:", currentUser.uid);
+          setProfilePicture(currentUser.photoURL || undefined);
         }
       } catch (error) {
         console.error("Error loading profile data:", error);
@@ -78,6 +82,23 @@ const Profile = () => {
       title: "Profile updated",
       description: "Your profile information has been updated successfully."
     });
+  };
+  
+  // Function to handle profile picture updates
+  const handleProfilePictureUpdated = (url: string) => {
+    console.log("Profile picture updated:", url);
+    setProfilePicture(url);
+    
+    // Update profile data with new picture URL
+    if (profileData) {
+      const updatedProfile = {
+        ...profileData,
+        profilePicture: url,
+        updatedAt: new Date()
+      };
+      setProfileData(updatedProfile);
+      saveUserProfile(updatedProfile).catch(console.error);
+    }
   };
   
   // Function to save privacy settings
@@ -132,17 +153,13 @@ const Profile = () => {
                 <div className="glass-panel p-8 mb-8 animate-fade-in">
                   <div className="flex flex-col md:flex-row items-center gap-8">
                     <div className="relative">
-                      <img 
-                        src={currentUser?.photoURL || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"} 
-                        alt="Profile" 
-                        className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                      <ProfilePicture 
+                        url={profilePicture}
+                        username={profileData?.username || currentUser?.displayName || "User"}
+                        size="xl"
+                        editable={true}
+                        onPictureUpdated={handleProfilePictureUpdated}
                       />
-                      <button 
-                        className="absolute bottom-0 right-0 p-2 rounded-full bg-maronaut-500 text-white hover:bg-maronaut-600 transition-colors"
-                        onClick={handleOpenEditDialog}
-                      >
-                        <Edit size={16} />
-                      </button>
                     </div>
                     
                     <div className="text-center md:text-left flex-1">

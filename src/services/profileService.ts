@@ -1,3 +1,4 @@
+
 import { db } from "../lib/firebase";
 import { 
   doc, 
@@ -12,6 +13,7 @@ import {
   Timestamp,
   limit
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export interface PrivacySettings {
   isPublicProfile: boolean;
@@ -38,6 +40,7 @@ export interface UserProfile {
   boatDetails: BoatDetails;
   sailingSince?: string;
   email?: string;
+  profilePicture?: string;
   privacySettings?: PrivacySettings;
   createdAt: Date | Timestamp;
   updatedAt: Date | Timestamp;
@@ -61,6 +64,42 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
   console.log("Username availability check is disabled, returning true for:", username);
   return true;
+};
+
+// Upload profile picture to Firebase Storage
+export const uploadProfilePicture = async (userId: string, file: File): Promise<string> => {
+  try {
+    console.log("Uploading profile picture for user:", userId);
+    
+    // Initialize Firebase Storage
+    const storage = getStorage();
+    
+    // Create a storage reference
+    const profilePicRef = ref(storage, `profilePictures/${userId}`);
+    
+    // Upload the file
+    const snapshot = await uploadBytes(profilePicRef, file);
+    console.log("Upload successful:", snapshot);
+    
+    // Get the download URL
+    const downloadURL = await getDownloadURL(profilePicRef);
+    console.log("Download URL:", downloadURL);
+    
+    // Update user profile with the new picture URL
+    const userProfile = await getUserProfile(userId);
+    if (userProfile) {
+      await saveUserProfile({
+        ...userProfile,
+        profilePicture: downloadURL,
+        updatedAt: new Date()
+      });
+    }
+    
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading profile picture:", error);
+    throw error;
+  }
 };
 
 // Create or update a user profile

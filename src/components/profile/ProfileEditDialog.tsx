@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import ProfilePicture from "./ProfilePicture";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
   const { currentUser, isLoaded } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [profileData, setProfileData] = React.useState<Partial<UserProfile>>({});
+  const [profilePicture, setProfilePicture] = React.useState<string | undefined>(undefined);
   
   // For basic user data
   const [username, setUsername] = React.useState("");
@@ -52,12 +53,19 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
     homeMarina: "",
   });
   
+  // Handle profile picture update
+  const handleProfilePictureUpdated = (url: string) => {
+    console.log("Profile picture updated in dialog:", url);
+    setProfilePicture(url);
+  };
+  
   // Load user data when dialog opens
   React.useEffect(() => {
     if (isLoaded && currentUser && open) {
       // Get display name (username) from Firebase
       const displayName = currentUser.displayName || "";
       setUsername(displayName);
+      setProfilePicture(currentUser.photoURL || undefined);
       
       // Load profile data from Firebase
       const loadProfileData = async () => {
@@ -70,6 +78,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
               console.log("Loaded profile data:", profile);
               setProfileData(profile);
               setUsername(profile.username || displayName);
+              setProfilePicture(profile.profilePicture || currentUser.photoURL || undefined);
               setFirstName(profile.firstName || "");
               setLastName(profile.lastName || "");
               setLocation(profile.location || "");
@@ -131,6 +140,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
         bio,
         sailingSince,
         boatDetails,
+        profilePicture: profilePicture,
         email: currentUser.email || undefined,
         // Preserve original creation date if it exists
         createdAt: profileData.createdAt || new Date(),
@@ -179,6 +189,16 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Personal Information</h3>
             
+            <div className="flex justify-center mb-4">
+              <ProfilePicture
+                url={profilePicture}
+                username={username}
+                size="lg"
+                editable={true}
+                onPictureUpdated={handleProfilePictureUpdated}
+              />
+            </div>
+            
             <div className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="username" className="flex items-center gap-2">
@@ -190,7 +210,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Your username"
-                  disabled // Username cannot be changed after creation
+                  disabled
                 />
                 <p className="text-xs text-muted-foreground">
                   Username cannot be changed after account creation.
