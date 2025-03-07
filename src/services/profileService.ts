@@ -8,7 +8,9 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  serverTimestamp,
+  Timestamp
 } from "firebase/firestore";
 
 export interface BoatDetails {
@@ -26,8 +28,8 @@ export interface UserProfile {
   boatDetails: BoatDetails;
   sailingSince?: string;
   email?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | Timestamp;
+  updatedAt: Date | Timestamp;
 }
 
 // Use localStorage as a fallback if Firebase isn't working
@@ -47,22 +49,27 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 // Create or update a user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
+    console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
     const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
-      // Create new profile
+      // Create new profile with server timestamp
       await setDoc(userRef, {
         ...profile,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+      console.log("Created new profile for:", profile.userId);
     } else {
-      // Update existing profile
+      // Update existing profile with server timestamp, preserving original createdAt
+      const existingData = userDoc.data();
       await updateDoc(userRef, {
         ...profile,
-        updatedAt: new Date()
+        createdAt: existingData.createdAt, // Preserve original creation date
+        updatedAt: serverTimestamp()
       });
+      console.log("Updated existing profile for:", profile.userId);
     }
     
     // Also save to localStorage as a fallback
@@ -71,19 +78,24 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     console.error("Error saving user profile to Firestore:", error);
     console.log("Saving to localStorage instead");
     saveToLocalStorage(profile);
+    throw error; // Re-throw to allow handling by the component
   }
 };
 
 // Get a user profile by user ID
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
+    console.log("Getting profile for user:", userId);
     // Try to get from Firestore
     const userRef = doc(db, "userProfiles", userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
-      return userDoc.data() as UserProfile;
+      const data = userDoc.data() as UserProfile;
+      console.log("Found profile in Firestore:", data);
+      return data;
     } else {
+      console.log("Profile not found in Firestore, checking localStorage");
       // If not in Firestore, try localStorage
       return getFromLocalStorage(userId);
     }
@@ -100,6 +112,7 @@ export const createInitialProfile = async (userId: string, email: string, name: 
   const existingProfile = await getUserProfile(userId).catch(() => null);
   
   if (!existingProfile) {
+    console.log("Creating initial profile for new user:", userId);
     const initialProfile: UserProfile = {
       userId,
       name,
@@ -112,6 +125,7 @@ export const createInitialProfile = async (userId: string, email: string, name: 
         length: "",
         homeMarina: ""
       },
+      sailingSince: "",
       createdAt: new Date(),
       updatedAt: new Date()
     };

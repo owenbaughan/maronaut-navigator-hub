@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
-import { Ship, MapPin, User, Mail } from "lucide-react";
+import { Ship, MapPin, User, Mail, Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,17 +15,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { getUserProfile, saveUserProfile, BoatDetails } from "@/services/profileService";
+import { getUserProfile, saveUserProfile, BoatDetails, UserProfile } from "@/services/profileService";
 import { updateProfile } from "@/lib/firebase";
 
 interface ProfileEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onProfileUpdated?: () => void;
 }
 
-const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
+const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEditDialogProps) => {
   const { currentUser, isLoaded } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [profileData, setProfileData] = React.useState<Partial<UserProfile>>({});
   
   // For basic user data from Firebase Auth
   const [name, setName] = React.useState("");
@@ -33,6 +35,7 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
   
   // For custom data (to be stored in Firebase)
   const [bio, setBio] = React.useState("");
+  const [sailingSince, setSailingSince] = React.useState("");
   const [boatDetails, setBoatDetails] = React.useState<BoatDetails>({
     name: "",
     type: "",
@@ -48,17 +51,25 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
       // Load profile data from Firebase
       const loadProfileData = async () => {
         try {
+          setLoading(true);
           if (currentUser.uid) {
+            console.log("Loading profile data for:", currentUser.uid);
             const profile = await getUserProfile(currentUser.uid);
             if (profile) {
+              console.log("Loaded profile data:", profile);
+              setProfileData(profile);
+              setName(profile.name || currentUser.displayName || "");
               setLocation(profile.location || "");
               setBio(profile.bio || "");
+              setSailingSince(profile.sailingSince || "");
               setBoatDetails(profile.boatDetails || {
                 name: "",
                 type: "",
                 length: "",
                 homeMarina: "",
               });
+            } else {
+              console.log("No profile data found");
             }
           }
         } catch (error) {
@@ -68,6 +79,8 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
             description: "There was a problem loading your profile data.",
             variant: "destructive",
           });
+        } finally {
+          setLoading(false);
         }
       };
       
@@ -80,45 +93,52 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
     
     setLoading(true);
     try {
+      console.log("Updating profile for user:", currentUser.uid);
+      
       // Update user profile in Firebase Auth
       await updateProfile(currentUser, {
         displayName: name
       });
       
+      // Prepare profile data for saving to Firestore
+      const updatedProfile: UserProfile = {
+        userId: currentUser.uid,
+        name,
+        location,
+        bio,
+        sailingSince,
+        boatDetails,
+        email: currentUser.email || undefined,
+        // Preserve original creation date if it exists
+        createdAt: profileData.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+      
       // Save custom data to Firebase
-      if (currentUser.uid) {
-        await saveUserProfile({
-          userId: currentUser.uid,
-          name,
-          location,
-          bio,
-          boatDetails,
-          email: currentUser.email || undefined,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      }
+      await saveUserProfile(updatedProfile);
       
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       });
       
+      // Notify parent component that profile has been updated
+      if (onProfileUpdated) {
+        onProfileUpdated();
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to update profile", error);
       toast({
         title: "Update failed",
-        description: "There was a problem updating your profile.",
+        description: "There was a problem updating your profile. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
-  
-  // Fix typo in AuthContext
-  let fixedTypo = true;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -174,6 +194,19 @@ const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps) => {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="City, State"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="sailingSince" className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  Sailing Since
+                </Label>
+                <Input
+                  id="sailingSince"
+                  value={sailingSince}
+                  onChange={(e) => setSailingSince(e.target.value)}
+                  placeholder="e.g., 2015"
                 />
               </div>
               
