@@ -30,7 +30,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-// Create collection references for common collections
+// Create collection references with proper typing
 const friendsCollection = collection(db, "friends");
 const userProfilesCollection = collection(db, "userProfiles");
 const friendRequestsCollection = collection(db, "friendRequests");

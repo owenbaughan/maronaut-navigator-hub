@@ -1,3 +1,4 @@
+
 import { db, friendsCollection, userProfilesCollection, friendRequestsCollection } from "../lib/firebase";
 import { 
   query,
@@ -244,10 +245,13 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     }
     
     console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
-    console.log("Using friends collection:", friendsCollection.path);
+    
+    // Explicitly check that we're using the right collection
+    console.log("Using friends collection path:", friendsCollection.path);
     
     const timestamp = serverTimestamp() as Timestamp;
     
+    // First friend entry (user -> friend)
     const userFriendData = {
       userId,
       friendId,
@@ -260,6 +264,7 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     const userFriendRef = await addDoc(friendsCollection, userFriendData);
     console.log("Created first friend entry with document ID:", userFriendRef.id);
     
+    // Second friend entry (friend -> user) for bidirectional relationship
     const friendUserData = {
       userId: friendId,
       friendId: userId,
@@ -272,8 +277,14 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     const friendUserRef = await addDoc(friendsCollection, friendUserData);
     console.log("Created second friend entry with document ID:", friendUserRef.id);
     
+    // Verify the friendship was created
     const verifyFriendship = await checkFriendshipExists(userId, friendId);
     console.log("Verified friendship was created:", verifyFriendship);
+    
+    // Additional debug logging to check Firestore state
+    const friendsQuery = query(friendsCollection, where("userId", "==", userId));
+    const snapshot = await getDocs(friendsQuery);
+    console.log(`Found ${snapshot.size} friend entries for user ${userId} after creation`);
     
     return verifyFriendship;
   } catch (error) {
@@ -368,30 +379,29 @@ export const getFriendRequests = async (userId: string) => {
 export const getFriends = async (userId: string) => {
   try {
     console.log("Getting friends for user:", userId);
-    const q = query(
+    console.log("Friends collection path:", friendsCollection.path);
+    
+    // Create query against the friends collection
+    const friendsQuery = query(
       friendsCollection,
       where("userId", "==", userId)
     );
     
     console.log(`Querying friends collection with userId: ${userId}`);
-    console.log(`Collection path: ${friendsCollection.path}`);
     
-    const snapshot = await getDocs(q);
+    // Execute the query
+    const snapshot = await getDocs(friendsQuery);
     console.log(`Found ${snapshot.size} friend records for user ${userId}`);
     
-    console.log("==== FRIEND DOCUMENTS FOUND ====");
-    if (snapshot.empty) {
-      console.log("NO FRIEND DOCUMENTS FOUND!");
-    } else {
-      snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-        console.log("Friend document:", doc.id, doc.data());
-      });
-    }
-    console.log("================================");
+    // Debug: print each document found
+    snapshot.forEach((doc) => {
+      console.log("Friend document found:", doc.id, JSON.stringify(doc.data()));
+    });
     
+    // Process the results
     const friends: FriendData[] = [];
     
-    snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+    snapshot.forEach((doc) => {
       const data = doc.data() as FriendData;
       friends.push({ 
         id: doc.id, 
