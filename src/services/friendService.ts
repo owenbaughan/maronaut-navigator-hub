@@ -1,3 +1,4 @@
+
 import { db } from "../lib/firebase";
 import { 
   collection,
@@ -15,7 +16,9 @@ import {
   onSnapshot,
   DocumentReference,
   orderBy,
-  limit
+  limit,
+  QueryDocumentSnapshot,
+  DocumentData
 } from "firebase/firestore";
 import { getUserProfile } from "./profileService";
 
@@ -143,6 +146,7 @@ export const checkFriendRequestExists = async (userId: string, targetUserId: str
 
 export const checkFriendshipExists = async (userId: string, targetUserId: string) => {
   try {
+    console.log(`Checking if friendship exists between ${userId} and ${targetUserId}`);
     const friendsRef = collection(db, "friends");
     
     const query1 = query(
@@ -229,8 +233,13 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
     
+    // Create a collection specifically for friends
+    const friendsCollection = collection(db, "friends");
+    console.log("Using friends collection:", friendsCollection.path);
+    
     const timestamp = serverTimestamp() as Timestamp;
     
+    // Creating the first friend entry (user -> friend)
     const userFriendData = {
       userId,
       friendId,
@@ -240,9 +249,10 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     };
     
     console.log("Creating friend entry for current user:", userFriendData);
-    const userFriendRef = await addDoc(collection(db, "friends"), userFriendData);
+    const userFriendRef = await addDoc(friendsCollection, userFriendData);
     console.log("Added friend entry for current user with document ID:", userFriendRef.id);
     
+    // Creating the second friend entry (friend -> user)
     const friendUserData = {
       userId: friendId,
       friendId: userId,
@@ -252,22 +262,22 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     };
     
     console.log("Creating friend entry for friend:", friendUserData);
-    const friendUserRef = await addDoc(collection(db, "friends"), friendUserData);
+    const friendUserRef = await addDoc(friendsCollection, friendUserData);
     console.log("Added friend entry for friend with document ID:", friendUserRef.id);
     
     console.log("Friend added directly, both entries created successfully");
     
+    // Verify that the entries were created
     console.log("Verifying friend entries were created by querying the collection...");
-    const friendsRef = collection(db, "friends");
     
     const query1 = query(
-      friendsRef,
+      friendsCollection,
       where("userId", "==", userId),
       where("friendId", "==", friendId)
     );
     
     const query2 = query(
-      friendsRef,
+      friendsCollection,
       where("userId", "==", friendId),
       where("friendId", "==", userId)
     );
@@ -279,10 +289,18 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Verification results:");
     console.log(`- Direction 1 (${userId} -> ${friendId}): ${snapshot1.size} records`);
-    snapshot1.forEach(doc => console.log(`  Document ID: ${doc.id}, Data:`, doc.data()));
+    
+    // Fix the TypeScript error by providing the correct parameter types
+    snapshot1.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+      console.log(`  Document ID: ${doc.id}, Data:`, doc.data());
+    });
     
     console.log(`- Direction 2 (${friendId} -> ${userId}): ${snapshot2.size} records`);
-    snapshot2.forEach(doc => console.log(`  Document ID: ${doc.id}, Data:`, doc.data()));
+    
+    // Fix the TypeScript error here as well
+    snapshot2.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+      console.log(`  Document ID: ${doc.id}, Data:`, doc.data());
+    });
     
     const verifyFriendship = !snapshot1.empty || !snapshot2.empty;
     console.log("Verification that friendship was created:", verifyFriendship);
@@ -405,15 +423,17 @@ export const getFriends = async (userId: string) => {
     if (snapshot.empty) {
       console.log("NO FRIEND DOCUMENTS FOUND!");
     } else {
-      snapshot.forEach((doc, index) => {
-        console.log(`Friend document ${index + 1}:`, doc.id, doc.data());
+      // Fix the TypeScript error by using correct parameter types
+      snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+        console.log("Friend document:", doc.id, doc.data());
       });
     }
     console.log("================================");
     
     const friends: FriendData[] = [];
     
-    snapshot.forEach(doc => {
+    // Fix the TypeScript error by using correct parameter types
+    snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
       const data = doc.data() as FriendData;
       friends.push({ 
         id: doc.id, 
