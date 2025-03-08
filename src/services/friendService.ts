@@ -1,4 +1,3 @@
-
 import { db } from "../lib/firebase";
 import { 
   collection,
@@ -39,7 +38,6 @@ export interface FriendData {
   photoURL?: string | null;
 }
 
-// Search for users by username
 export const searchUsers = async (searchQuery: string, currentUserId: string) => {
   if (!searchQuery.trim()) return [];
   
@@ -47,17 +45,13 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
     console.log("Searching users with query:", searchQuery, "Current user:", currentUserId);
     const usersRef = collection(db, "userProfiles");
     
-    // Log the collection path to ensure we're querying the right collection
     console.log("Searching in collection:", usersRef.path);
     
-    // Convert to lowercase for case-insensitive search
     const lowercaseQuery = searchQuery.toLowerCase();
     
-    // Get all user profiles from the database
     const querySnapshot = await getDocs(usersRef);
     console.log("Total profiles found in database:", querySnapshot.size);
     
-    // If no profiles were found, log it clearly
     if (querySnapshot.empty) {
       console.error("NO PROFILES FOUND IN DATABASE! Check your Firestore collection structure.");
       return [];
@@ -65,7 +59,6 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
     
     const users: any[] = [];
     
-    // Log all retrieved profiles for debugging
     console.log("All profiles in database:");
     querySnapshot.forEach((doc) => {
       console.log("Document ID:", doc.id, "Data:", JSON.stringify(doc.data()));
@@ -75,23 +68,19 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
       const userData = doc.data();
       console.log("Examining user:", userData.username, "ID:", userData.userId);
       
-      // Skip if this is the current user
       if (userData.userId === currentUserId) {
         console.log("Skipping current user:", userData.username);
         return;
       }
       
-      // Ensure username exists before comparing
       if (!userData.username) {
         console.log("Skipping user with no username:", doc.id);
         return;
       }
       
-      // Perform case-insensitive search
       const username = userData.username.toLowerCase();
       console.log(`Comparing '${username}' with search query '${lowercaseQuery}'`);
       
-      // Check if username contains the search query (case insensitive)
       if (username.includes(lowercaseQuery)) {
         console.log("Match found! Adding to results:", userData.username);
         users.push({
@@ -116,20 +105,16 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
   }
 };
 
-// Check if a friend request already exists
 export const checkFriendRequestExists = async (userId: string, targetUserId: string) => {
   try {
-    // Check for requests in either direction
     const requestsRef = collection(db, "friendRequests");
     
-    // Check if the current user sent a request to the target user
     const sentQuery = query(
       requestsRef,
       where("senderId", "==", userId),
       where("receiverId", "==", targetUserId)
     );
     
-    // Check if the target user sent a request to the current user
     const receivedQuery = query(
       requestsRef,
       where("senderId", "==", targetUserId),
@@ -156,12 +141,10 @@ export const checkFriendRequestExists = async (userId: string, targetUserId: str
   }
 };
 
-// Check if users are already friends
 export const checkFriendshipExists = async (userId: string, targetUserId: string) => {
   try {
     const friendsRef = collection(db, "friends");
     
-    // Check for friendship in either direction
     const query1 = query(
       friendsRef,
       where("userId", "==", userId),
@@ -192,12 +175,10 @@ export const checkFriendshipExists = async (userId: string, targetUserId: string
   }
 };
 
-// Send a friend request
 export const sendFriendRequest = async (senderId: string, receiverId: string) => {
   try {
     console.log(`Sending friend request from ${senderId} to ${receiverId}`);
     
-    // Get usernames for both users
     const [senderProfile, receiverProfile] = await Promise.all([
       getUserProfile(senderId),
       getUserProfile(receiverId)
@@ -226,19 +207,16 @@ export const sendFriendRequest = async (senderId: string, receiverId: string) =>
   }
 };
 
-// Add friend directly (for auto-accept case)
 export const addFriendDirectly = async (userId: string, friendId: string) => {
   try {
     console.log(`Adding friend directly: ${userId} and ${friendId}`);
     
-    // First check if they're already friends to avoid duplicates
     const alreadyFriends = await checkFriendshipExists(userId, friendId);
     if (alreadyFriends) {
       console.log("Users are already friends, skipping friend creation");
       return true;
     }
     
-    // Get usernames for both users
     const [userProfile, friendProfile] = await Promise.all([
       getUserProfile(userId),
       getUserProfile(friendId)
@@ -251,10 +229,8 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
     
-    // Create friend entries for both users
     const timestamp = serverTimestamp() as Timestamp;
     
-    // Add entry for current user
     const userFriendData = {
       userId,
       friendId,
@@ -265,9 +241,8 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Creating friend entry for current user:", userFriendData);
     const userFriendRef = await addDoc(collection(db, "friends"), userFriendData);
-    console.log("Added friend entry for current user:", userFriendRef.id);
+    console.log("Added friend entry for current user with document ID:", userFriendRef.id);
     
-    // Add entry for the friend
     const friendUserData = {
       userId: friendId,
       friendId: userId,
@@ -278,27 +253,51 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Creating friend entry for friend:", friendUserData);
     const friendUserRef = await addDoc(collection(db, "friends"), friendUserData);
-    console.log("Added friend entry for friend:", friendUserRef.id);
+    console.log("Added friend entry for friend with document ID:", friendUserRef.id);
     
     console.log("Friend added directly, both entries created successfully");
     
-    // Verify friend entries were added
-    const verifyFriendship = await checkFriendshipExists(userId, friendId);
+    console.log("Verifying friend entries were created by querying the collection...");
+    const friendsRef = collection(db, "friends");
+    
+    const query1 = query(
+      friendsRef,
+      where("userId", "==", userId),
+      where("friendId", "==", friendId)
+    );
+    
+    const query2 = query(
+      friendsRef,
+      where("userId", "==", friendId),
+      where("friendId", "==", userId)
+    );
+    
+    const [snapshot1, snapshot2] = await Promise.all([
+      getDocs(query1),
+      getDocs(query2)
+    ]);
+    
+    console.log("Verification results:");
+    console.log(`- Direction 1 (${userId} -> ${friendId}): ${snapshot1.size} records`);
+    snapshot1.forEach(doc => console.log(`  Document ID: ${doc.id}, Data:`, doc.data()));
+    
+    console.log(`- Direction 2 (${friendId} -> ${userId}): ${snapshot2.size} records`);
+    snapshot2.forEach(doc => console.log(`  Document ID: ${doc.id}, Data:`, doc.data()));
+    
+    const verifyFriendship = !snapshot1.empty || !snapshot2.empty;
     console.log("Verification that friendship was created:", verifyFriendship);
     
-    return true;
+    return verifyFriendship;
   } catch (error) {
     console.error("Error adding friend directly:", error);
     throw error;
   }
 };
 
-// Accept a friend request
 export const acceptFriendRequest = async (requestId: string) => {
   try {
     console.log("Accepting friend request:", requestId);
     
-    // Get the friend request
     const requestRef = doc(db, "friendRequests", requestId);
     const requestSnap = await getDoc(requestRef);
     
@@ -308,10 +307,8 @@ export const acceptFriendRequest = async (requestId: string) => {
     
     const requestData = requestSnap.data() as FriendRequest;
     
-    // Update the request status
     await updateDoc(requestRef, { status: 'accepted' });
     
-    // Add friend entries for both users
     await addFriendDirectly(requestData.senderId, requestData.receiverId);
     
     console.log("Friend request accepted");
@@ -322,12 +319,10 @@ export const acceptFriendRequest = async (requestId: string) => {
   }
 };
 
-// Decline or cancel a friend request
 export const removeFriendRequest = async (requestId: string) => {
   try {
     console.log("Removing friend request:", requestId);
     
-    // Delete the friend request
     const requestRef = doc(db, "friendRequests", requestId);
     await deleteDoc(requestRef);
     
@@ -339,20 +334,17 @@ export const removeFriendRequest = async (requestId: string) => {
   }
 };
 
-// Get all friend requests for a user
 export const getFriendRequests = async (userId: string) => {
   try {
     console.log("Getting friend requests for user:", userId);
     const requestsRef = collection(db, "friendRequests");
     
-    // Get incoming requests
     const incomingQuery = query(
       requestsRef,
       where("receiverId", "==", userId),
       where("status", "==", "pending")
     );
     
-    // Get outgoing requests
     const outgoingQuery = query(
       requestsRef,
       where("senderId", "==", userId),
@@ -385,7 +377,6 @@ export const getFriendRequests = async (userId: string) => {
   }
 };
 
-// Get all friends for a user
 export const getFriends = async (userId: string) => {
   try {
     console.log("Getting friends for user:", userId);
@@ -395,24 +386,50 @@ export const getFriends = async (userId: string) => {
       where("userId", "==", userId)
     );
     
+    console.log(`Querying friends collection with userId: ${userId}`);
+    console.log(`Collection path: ${friendsRef.path}`);
+    
+    console.log("Query parameters:", JSON.stringify({
+      collection: friendsRef.path,
+      where: {
+        field: "userId",
+        operator: "==",
+        value: userId
+      }
+    }));
+    
     const snapshot = await getDocs(q);
     console.log(`Found ${snapshot.size} friend records for user ${userId}`);
     
-    // Log all retrieved friend documents for debugging
-    snapshot.forEach(doc => {
-      console.log("Friend document:", doc.id, doc.data());
-    });
+    console.log("==== FRIEND DOCUMENTS FOUND ====");
+    if (snapshot.empty) {
+      console.log("NO FRIEND DOCUMENTS FOUND!");
+    } else {
+      snapshot.forEach((doc, index) => {
+        console.log(`Friend document ${index + 1}:`, doc.id, doc.data());
+      });
+    }
+    console.log("================================");
     
     const friends: FriendData[] = [];
     
     snapshot.forEach(doc => {
-      friends.push({ id: doc.id, ...doc.data() as FriendData });
+      const data = doc.data() as FriendData;
+      friends.push({ 
+        id: doc.id, 
+        userId: data.userId,
+        friendId: data.friendId,
+        username: data.username || "Unknown",
+        photoURL: data.photoURL,
+        timestamp: data.timestamp
+      });
     });
     
-    console.log("Processed friends list:", friends);
+    console.log("Processed friends list:", JSON.stringify(friends));
     return friends;
   } catch (error) {
     console.error("Error getting friends:", error);
+    console.error("Error details:", JSON.stringify(error));
     return [];
   }
 };

@@ -37,6 +37,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const [showResults, setShowResults] = useState(false);
   const [noResults, setNoResults] = useState(false);
   const [isAddingFriend, setIsAddingFriend] = useState(false);
+  const [processingUserId, setProcessingUserId] = useState<string | null>(null);
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -154,23 +155,50 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     
     try {
       setIsAddingFriend(true);
-      console.log("Adding friend, user privacy settings:", user.privacySettings);
+      setProcessingUserId(user.id);
+      
+      console.log(`Starting friend addition process for user ${user.username} (${user.id})`);
+      console.log("User privacy settings:", user.privacySettings);
       
       // Double-check privacy settings by getting the latest profile data
       const latestProfile = await getUserProfile(user.id);
-      const autoAccept = latestProfile?.privacySettings?.autoAcceptFriends ?? true;
-      
       console.log("Latest profile data for privacy check:", latestProfile);
+      
+      const autoAccept = latestProfile?.privacySettings?.autoAcceptFriends ?? true;
       console.log("Auto accept setting from latest profile:", autoAccept);
       
       // Check if the user's privacy settings allow auto-accepting friends
       if (autoAccept) {
         console.log("Auto-accept is enabled, adding friend directly");
-        await addFriendDirectly(currentUser.uid, user.id);
+        
+        // Check if already friends first
+        const alreadyFriends = await checkFriendshipExists(currentUser.uid, user.id);
+        if (alreadyFriends) {
+          console.log("Already friends, updating UI only");
+          toast({
+            title: "Already friends",
+            description: `You are already friends with ${user.username}`,
+          });
+          
+          // Update the user's status in search results to 'friend'
+          setSearchResults(prev => 
+            prev.map(result => 
+              result.id === user.id 
+                ? { ...result, status: 'friend' } 
+                : result
+            )
+          );
+          
+          return;
+        }
+        
+        // Add friend directly
+        const success = await addFriendDirectly(currentUser.uid, user.id);
+        console.log("Friend addition result:", success);
         
         // Verify that the friendship was created successfully
         const friendshipCreated = await checkFriendshipExists(currentUser.uid, user.id);
-        console.log("Friendship created successfully:", friendshipCreated);
+        console.log("Friendship created confirmation:", friendshipCreated);
         
         if (friendshipCreated) {
           toast({
@@ -193,6 +221,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
             onUserAdded();
           }
         } else {
+          console.error("Friendship verification failed after addition");
           throw new Error("Failed to create friendship");
         }
       } else {
@@ -226,6 +255,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       });
     } finally {
       setIsAddingFriend(false);
+      setProcessingUserId(null);
     }
   };
 
@@ -299,10 +329,10 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                       size="sm"
                       className="bg-maronaut-500 hover:bg-maronaut-600"
                       onClick={() => handleAddFriend(user)}
-                      disabled={isAddingFriend}
+                      disabled={isAddingFriend && processingUserId === user.id}
                     >
                       <UserPlus size={16} className="mr-1" />
-                      {isAddingFriend ? 'Adding...' : 'Add Friend'}
+                      {isAddingFriend && processingUserId === user.id ? 'Adding...' : 'Add Friend'}
                     </Button>
                   )}
                 </div>
