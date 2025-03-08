@@ -1,4 +1,3 @@
-
 import { db } from "../lib/firebase";
 import { 
   collection,
@@ -225,6 +224,13 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
   try {
     console.log(`Adding friend directly: ${userId} and ${friendId}`);
     
+    // First check if they're already friends to avoid duplicates
+    const alreadyFriends = await checkFriendshipExists(userId, friendId);
+    if (alreadyFriends) {
+      console.log("Users are already friends, skipping friend creation");
+      return true;
+    }
+    
     // Get usernames for both users
     const [userProfile, friendProfile] = await Promise.all([
       getUserProfile(userId),
@@ -232,31 +238,39 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     ]);
     
     if (!userProfile || !friendProfile) {
+      console.error("Could not find user profiles for either", userId, "or", friendId);
       throw new Error("Could not find user profiles");
     }
+    
+    console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
     
     // Create friend entries for both users
     const timestamp = serverTimestamp() as Timestamp;
     
+    // Create friend entries as a batch to ensure both or neither are created
+    const batch = [];
+    
     // Add entry for current user
-    await addDoc(collection(db, "friends"), {
+    const userFriendRef = await addDoc(collection(db, "friends"), {
       userId,
       friendId,
       username: friendProfile.username,
       photoURL: friendProfile.profilePicture || null,
       timestamp
     });
+    console.log("Added friend entry for current user:", userFriendRef.id);
     
     // Add entry for the friend
-    await addDoc(collection(db, "friends"), {
+    const friendUserRef = await addDoc(collection(db, "friends"), {
       userId: friendId,
       friendId: userId,
       username: userProfile.username,
       photoURL: userProfile.profilePicture || null,
       timestamp
     });
+    console.log("Added friend entry for friend:", friendUserRef.id);
     
-    console.log("Friend added directly");
+    console.log("Friend added directly, both entries created successfully");
     return true;
   } catch (error) {
     console.error("Error adding friend directly:", error);

@@ -24,39 +24,35 @@ const FriendsFeed = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   
-  // State for friends and requests
   const [friends, setFriends] = useState<FriendData[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // State for friend profile dialog
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
-  // Fetch data on component mount and when currentUser changes
   useEffect(() => {
-    // Scroll to top when component mounts
     window.scrollTo(0, 0);
     
-    // Fetch friends and requests if user is signed in
     if (currentUser) {
       fetchFriendsData();
     }
   }, [currentUser]);
   
-  // Function to fetch all friends data
   const fetchFriendsData = async () => {
     if (!currentUser) return;
     
     setIsLoading(true);
     try {
-      // Get friends
+      console.log("Fetching friends data for user:", currentUser.uid);
+      
       const friendsList = await getFriends(currentUser.uid);
+      console.log("Fetched friends:", friendsList.length, friendsList);
       setFriends(friendsList);
       
-      // Get friend requests
       const { incomingRequests: incoming, outgoingRequests: outgoing } = await getFriendRequests(currentUser.uid);
+      console.log("Fetched incoming requests:", incoming.length, "outgoing requests:", outgoing.length);
       setIncomingRequests(incoming);
       setPendingRequests(outgoing);
     } catch (error) {
@@ -71,7 +67,6 @@ const FriendsFeed = () => {
     }
   };
   
-  // Handle friend request acceptance
   const handleAcceptRequest = async (requestId: string) => {
     try {
       await acceptFriendRequest(requestId);
@@ -80,9 +75,8 @@ const FriendsFeed = () => {
         description: "You are now friends with this user",
       });
       
-      // Update UI
       setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
-      await fetchFriendsData(); // Refresh all data
+      await fetchFriendsData();
     } catch (error) {
       console.error("Error accepting friend request:", error);
       toast({
@@ -93,7 +87,6 @@ const FriendsFeed = () => {
     }
   };
   
-  // Handle friend request rejection
   const handleRejectRequest = async (requestId: string) => {
     try {
       await removeFriendRequest(requestId);
@@ -102,7 +95,6 @@ const FriendsFeed = () => {
         description: "The friend request has been declined",
       });
       
-      // Update UI
       setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
     } catch (error) {
       console.error("Error rejecting friend request:", error);
@@ -114,7 +106,6 @@ const FriendsFeed = () => {
     }
   };
   
-  // Handle cancelling a sent friend request
   const handleCancelRequest = async (requestId: string) => {
     try {
       await removeFriendRequest(requestId);
@@ -123,7 +114,6 @@ const FriendsFeed = () => {
         description: "Your friend request has been cancelled",
       });
       
-      // Update UI
       setPendingRequests(prev => prev.filter(req => req.id !== requestId));
     } catch (error) {
       console.error("Error cancelling friend request:", error);
@@ -135,7 +125,6 @@ const FriendsFeed = () => {
     }
   };
 
-  // Handle viewing a friend's profile
   const handleViewFriendProfile = (friendId: string) => {
     setSelectedFriendId(friendId);
     setProfileDialogOpen(true);
@@ -214,7 +203,6 @@ const FriendsFeed = () => {
                 
                 <TabsContent value="requests">
                   <div className="grid gap-6 md:grid-cols-2">
-                    {/* Incoming friend requests */}
                     <Card>
                       <CardHeader>
                         <CardTitle>Incoming Requests</CardTitle>
@@ -270,7 +258,6 @@ const FriendsFeed = () => {
                       </CardContent>
                     </Card>
                     
-                    {/* Pending friend requests */}
                     <Card>
                       <CardHeader>
                         <CardTitle>Pending Requests</CardTitle>
@@ -327,7 +314,6 @@ const FriendsFeed = () => {
       </main>
       <Footer />
       
-      {/* Friend Profile Dialog */}
       <FriendProfileDialog
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}

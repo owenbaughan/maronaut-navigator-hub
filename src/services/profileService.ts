@@ -1,4 +1,3 @@
-
 import { db, storage } from "../lib/firebase";
 import { 
   doc, 
@@ -158,23 +157,38 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       
       if (!userDoc.exists()) {
         // Create new profile with server timestamp
-        await setDoc(userRef, {
+        const defaultProfile = {
           ...profileToSave,
           // Set default privacy settings for new users
           privacySettings: profileToSave.privacySettings || {
             isPublicProfile: true,
-            autoAcceptFriends: true, // Changed default to true
+            autoAcceptFriends: true, // Default to true
             showEmail: false,
             showLocation: true,
             showBoatDetails: true
           },
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        });
+        };
+        
+        console.log("Creating new profile with defaults:", defaultProfile);
+        await setDoc(userRef, defaultProfile);
         console.log("Created new profile for:", profile.userId);
       } else {
         // Update existing profile with server timestamp, preserving original createdAt
         const existingData = userDoc.data();
+        
+        // Ensure privacySettings exists with default values if not present
+        if (!profileToSave.privacySettings) {
+          profileToSave.privacySettings = existingData.privacySettings || {
+            isPublicProfile: true,
+            autoAcceptFriends: true, // Default to true
+            showEmail: false,
+            showLocation: true,
+            showBoatDetails: true
+          };
+        }
+        
         await updateDoc(userRef, {
           ...profileToSave,
           createdAt: existingData.createdAt, // Preserve original creation date

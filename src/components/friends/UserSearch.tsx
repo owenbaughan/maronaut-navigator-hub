@@ -135,29 +135,42 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     if (!currentUser) return;
     
     try {
+      console.log("Adding friend, user privacy settings:", user.privacySettings);
+      
       // Check if the user's privacy settings allow auto-accepting friends
       if (user.privacySettings?.autoAcceptFriends) {
+        console.log("Auto-accept is enabled, adding friend directly");
         await addFriendDirectly(currentUser.uid, user.id);
         toast({
           title: "Friend added",
           description: `${user.username} is now your friend`,
         });
+        
+        // Update the user's status in search results to 'friend'
+        setSearchResults(prev => 
+          prev.map(result => 
+            result.id === user.id 
+              ? { ...result, status: 'friend' } 
+              : result
+          )
+        );
       } else {
+        console.log("Auto-accept is disabled, sending friend request");
         await sendFriendRequest(currentUser.uid, user.id);
         toast({
           title: "Friend request sent",
           description: `A friend request has been sent to ${user.username}`,
         });
+        
+        // Update the user's status in search results to 'pending'
+        setSearchResults(prev => 
+          prev.map(result => 
+            result.id === user.id 
+              ? { ...result, status: 'pending' } 
+              : result
+          )
+        );
       }
-      
-      // Update the user's status in search results
-      setSearchResults(prev => 
-        prev.map(result => 
-          result.id === user.id 
-            ? { ...result, status: 'pending' } 
-            : result
-        )
-      );
       
       // Call the callback if provided
       if (onUserAdded) {
