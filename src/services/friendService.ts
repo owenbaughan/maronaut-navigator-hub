@@ -16,7 +16,9 @@ import {
   orderBy,
   limit,
   QueryDocumentSnapshot,
-  DocumentData
+  DocumentData,
+  collection,
+  CollectionReference
 } from "firebase/firestore";
 import { getUserProfile } from "./profileService";
 
@@ -37,6 +39,19 @@ export interface FriendData {
   timestamp: Timestamp;
   username?: string;
   photoURL?: string | null;
+}
+
+interface UserProfileData {
+  userId: string;
+  username: string;
+  profilePicture?: string | null;
+  privacySettings?: {
+    isPublicProfile: boolean;
+    autoAcceptFriends: boolean;
+    showEmail?: boolean;
+    showLocation?: boolean;
+    showBoatDetails?: boolean;
+  };
 }
 
 export const searchUsers = async (searchQuery: string, currentUserId: string) => {
@@ -66,7 +81,7 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
     });
     
     querySnapshot.forEach((doc) => {
-      const userData = doc.data();
+      const userData = doc.data() as UserProfileData;
       console.log("Examining user:", userData.username, "ID:", userData.userId);
       
       if (userData.userId === currentUserId) {

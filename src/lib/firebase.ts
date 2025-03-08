@@ -1,6 +1,6 @@
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection } from "firebase/firestore";
+import { getFirestore, collection, CollectionReference } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { 
@@ -58,7 +58,8 @@ export {
   updateProfile,
   friendsCollection,
   userProfilesCollection,
-  friendRequestsCollection
+  friendRequestsCollection,
+  collection
 };
 
 export type { User };
