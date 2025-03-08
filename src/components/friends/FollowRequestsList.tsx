@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { FollowRequest } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { UserCheck, UserX, Clock } from 'lucide-react';
