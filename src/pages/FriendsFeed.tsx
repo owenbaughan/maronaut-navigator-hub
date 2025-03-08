@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import TripTimeline from '../components/friends/TripTimeline';
-import { Search, UserCheck, UserPlus } from 'lucide-react';
+import { Search, UserCheck, UserPlus, UserMinus, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,9 +16,21 @@ import {
   getFriends, 
   getFriendRequests, 
   acceptFriendRequest, 
-  removeFriendRequest 
+  removeFriendRequest,
+  removeFriend
 } from '@/services/friendService';
 import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const FriendsFeed = () => {
   const { currentUser } = useAuth();
@@ -28,6 +40,7 @@ const FriendsFeed = () => {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [removingFriendId, setRemovingFriendId] = useState<string | null>(null);
   
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
@@ -125,6 +138,39 @@ const FriendsFeed = () => {
     }
   };
 
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      setIsLoading(true);
+      const success = await removeFriend(currentUser.uid, friendId);
+      
+      if (success) {
+        setFriends(prev => prev.filter(friend => friend.friendId !== friendId));
+        toast({
+          title: "Friend removed",
+          description: "You are no longer friends with this user",
+        });
+      } else {
+        toast({
+          title: "Failed to remove friend",
+          description: "There was a problem removing this friend",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error removing friend:", error);
+      toast({
+        title: "Failed to remove friend",
+        description: "There was a problem removing this friend",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      setRemovingFriendId(null);
+    }
+  };
+
   const handleViewFriendProfile = (friendId: string) => {
     setSelectedFriendId(friendId);
     setProfileDialogOpen(true);
@@ -186,13 +232,46 @@ const FriendsFeed = () => {
                                   <p className="font-medium">{friend.username}</p>
                                 </div>
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleViewFriendProfile(friend.friendId)}
-                              >
-                                View Profile
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleViewFriendProfile(friend.friendId)}
+                                >
+                                  View Profile
+                                </Button>
+                                
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                                    >
+                                      <UserMinus className="h-4 w-4 mr-1" />
+                                      Remove
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remove Friend</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to remove {friend.username} from your friends? 
+                                        This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-red-500 hover:bg-red-600"
+                                        onClick={() => handleRemoveFriend(friend.friendId)}
+                                      >
+                                        Remove
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </div>
                           ))}
                         </div>

@@ -416,3 +416,67 @@ export const getFriends = async (userId: string) => {
     return [];
   }
 };
+
+/**
+ * Removes a friendship between two users by deleting both friendship documents.
+ * 
+ * @param userId - The current user's ID
+ * @param friendId - The friend's ID to remove
+ * @returns A boolean indicating if the removal was successful
+ */
+export const removeFriend = async (userId: string, friendId: string): Promise<boolean> => {
+  try {
+    console.log(`Removing friendship between ${userId} and ${friendId}`);
+    
+    // Query for both friendship documents
+    const query1 = query(
+      collection(db, "friends"),
+      where("userId", "==", userId),
+      where("friendId", "==", friendId)
+    );
+    
+    const query2 = query(
+      collection(db, "friends"),
+      where("userId", "==", friendId),
+      where("friendId", "==", userId)
+    );
+    
+    const [snapshot1, snapshot2] = await Promise.all([
+      getDocs(query1),
+      getDocs(query2)
+    ]);
+    
+    // Delete all documents found (should be at most one per direction)
+    const deletePromises: Promise<void>[] = [];
+    
+    snapshot1.forEach((docSnapshot) => {
+      console.log(`Deleting friendship document: ${docSnapshot.id} (direction 1)`);
+      deletePromises.push(deleteDoc(doc(db, "friends", docSnapshot.id)));
+    });
+    
+    snapshot2.forEach((docSnapshot) => {
+      console.log(`Deleting friendship document: ${docSnapshot.id} (direction 2)`);
+      deletePromises.push(deleteDoc(doc(db, "friends", docSnapshot.id)));
+    });
+    
+    if (deletePromises.length === 0) {
+      console.log("No friendship documents found to delete");
+      return false;
+    }
+    
+    await Promise.all(deletePromises);
+    console.log(`Successfully removed friendship between ${userId} and ${friendId}`);
+    
+    // Verify removal
+    const verifyRemoval = await checkFriendshipExists(userId, friendId);
+    if (verifyRemoval) {
+      console.warn("Friendship still exists after removal attempt!");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    return false;
+  }
+};
