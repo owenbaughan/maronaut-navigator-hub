@@ -155,7 +155,8 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       
       // Get target user's auto-accept setting
       const targetProfile = await getUserProfile(user.id);
-      const autoAccept = targetProfile?.privacySettings?.autoAcceptFriends !== false;
+      const autoAccept = targetProfile?.privacySettings?.autoAcceptFollows !== false && 
+                         targetProfile?.privacySettings?.autoAcceptFriends !== false;
       
       // Follow user
       console.log(`Following user: ${currentUser.uid} -> ${user.id}`);

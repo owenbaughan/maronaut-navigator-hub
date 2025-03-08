@@ -1,3 +1,4 @@
+
 import { db, friendsCollection, userProfilesCollection, friendRequestsCollection, ensureCollectionExists, collection } from "../lib/firebase";
 import { 
   query,
@@ -168,7 +169,9 @@ export const followUser = async (userId: string, targetUserId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", targetProfile.username);
     
-    const autoAccept = targetProfile.privacySettings?.autoAcceptFriends !== false;
+    // Use autoAcceptFollows instead of autoAcceptFriends, with fallback for backward compatibility
+    const autoAccept = targetProfile.privacySettings?.autoAcceptFollows !== false && 
+                       targetProfile.privacySettings?.autoAcceptFriends !== false;
     
     if (autoAccept) {
       await ensureCollectionExists('following');

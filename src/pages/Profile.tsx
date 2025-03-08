@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -23,7 +22,7 @@ const Profile = () => {
   
   // Privacy settings
   const [isPublicProfile, setIsPublicProfile] = useState(true);
-  const [autoAcceptFriends, setAutoAcceptFriends] = useState(true);
+  const [autoAcceptFollows, setAutoAcceptFollows] = useState(true);
   const [showEmail, setShowEmail] = useState(false);
   const [showLocation, setShowLocation] = useState(true);
   const [showBoatDetails, setShowBoatDetails] = useState(true);
@@ -46,7 +45,14 @@ const Profile = () => {
           // Initialize privacy settings from profile if they exist
           if (profile.privacySettings) {
             setIsPublicProfile(profile.privacySettings.isPublicProfile ?? true);
-            setAutoAcceptFriends(profile.privacySettings.autoAcceptFriends ?? true);
+            
+            // Handle both old and new field names for backward compatibility
+            setAutoAcceptFollows(
+              profile.privacySettings.autoAcceptFollows ?? 
+              profile.privacySettings.autoAcceptFriends ?? 
+              true
+            );
+            
             setShowEmail(profile.privacySettings.showEmail ?? false);
             setShowLocation(profile.privacySettings.showLocation ?? true);
             setShowBoatDetails(profile.privacySettings.showBoatDetails ?? true);
@@ -110,7 +116,7 @@ const Profile = () => {
         ...profileData,
         privacySettings: {
           isPublicProfile,
-          autoAcceptFriends,
+          autoAcceptFollows,
           showEmail,
           showLocation,
           showBoatDetails
@@ -279,8 +285,8 @@ const Profile = () => {
                             </div>
                             <Switch 
                               id="auto-accept" 
-                              checked={autoAcceptFriends}
-                              onCheckedChange={setAutoAcceptFriends}
+                              checked={autoAcceptFollows}
+                              onCheckedChange={setAutoAcceptFollows}
                             />
                           </div>
                           
