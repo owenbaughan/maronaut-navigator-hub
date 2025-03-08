@@ -1,3 +1,4 @@
+
 import { db, storage } from "../lib/firebase";
 import { 
   doc, 
@@ -118,6 +119,15 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
   }
 };
 
+// Default privacy settings
+export const getDefaultPrivacySettings = (): PrivacySettings => ({
+  isPublicProfile: true,
+  autoAcceptFriends: true,
+  showEmail: false,
+  showLocation: true,
+  showBoatDetails: true
+});
+
 // Create or update a user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
@@ -156,17 +166,11 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
-        // Create new profile with server timestamp
+        // Create new profile with server timestamp and default privacy settings
         const defaultProfile = {
           ...profileToSave,
-          // Set default privacy settings for new users
-          privacySettings: profileToSave.privacySettings || {
-            isPublicProfile: true,
-            autoAcceptFriends: true, // Default to true
-            showEmail: false,
-            showLocation: true,
-            showBoatDetails: true
-          },
+          // Always ensure privacySettings exists with default values
+          privacySettings: profileToSave.privacySettings || getDefaultPrivacySettings(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -178,16 +182,12 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         // Update existing profile with server timestamp, preserving original createdAt
         const existingData = userDoc.data();
         
-        // Ensure privacySettings exists with default values if not present
+        // Always ensure privacySettings exists with default values if not present
         if (!profileToSave.privacySettings) {
-          profileToSave.privacySettings = existingData.privacySettings || {
-            isPublicProfile: true,
-            autoAcceptFriends: true, // Default to true
-            showEmail: false,
-            showLocation: true,
-            showBoatDetails: true
-          };
+          profileToSave.privacySettings = existingData.privacySettings || getDefaultPrivacySettings();
         }
+        
+        console.log("Updating profile with privacy settings:", profileToSave.privacySettings);
         
         await updateDoc(userRef, {
           ...profileToSave,
@@ -229,11 +229,26 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       if (userDoc.exists()) {
         const data = userDoc.data() as UserProfile;
         console.log("Found profile in Firestore:", data);
+        
+        // Ensure privacySettings exists
+        if (!data.privacySettings) {
+          data.privacySettings = getDefaultPrivacySettings();
+          console.log("Added default privacy settings to profile:", data.privacySettings);
+        }
+        
         return data;
       } else {
         console.log("Profile not found in Firestore, checking localStorage");
         // If not in Firestore, try localStorage
-        return getFromLocalStorage(userId);
+        const localProfile = getFromLocalStorage(userId);
+        
+        // Ensure privacySettings exists
+        if (localProfile && !localProfile.privacySettings) {
+          localProfile.privacySettings = getDefaultPrivacySettings();
+          console.log("Added default privacy settings to local profile:", localProfile.privacySettings);
+        }
+        
+        return localProfile;
       }
     } catch (error) {
       console.error("Permission denied on read operation. Firebase security rules may be blocking reads:", error);
@@ -242,7 +257,14 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   } catch (error) {
     console.error("Error getting user profile from Firestore:", error);
     console.log("Trying localStorage instead");
-    return getFromLocalStorage(userId);
+    const localProfile = getFromLocalStorage(userId);
+    
+    // Ensure privacySettings exists
+    if (localProfile && !localProfile.privacySettings) {
+      localProfile.privacySettings = getDefaultPrivacySettings();
+    }
+    
+    return localProfile;
   }
 };
 
@@ -266,6 +288,8 @@ export const createInitialProfile = async (userId: string, email: string, userna
         length: "",
         homeMarina: ""
       },
+      // Always include privacy settings for new profiles
+      privacySettings: getDefaultPrivacySettings(),
       sailingSince: "",
       createdAt: new Date(),
       updatedAt: new Date()

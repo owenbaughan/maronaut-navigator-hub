@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   searchUsers, 
@@ -7,12 +6,13 @@ import {
   checkFriendRequestExists, 
   checkFriendshipExists 
 } from '@/services/friendService';
-import { Search, UserPlus, UserCheck, Clock, X } from 'lucide-react';
+import { Search, UserPlus, UserCheck, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { getUserProfile } from '@/services/profileService';
 
 interface UserSearchProps {
   onUserAdded?: () => void;
@@ -80,12 +80,16 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         return;
       }
       
-      // Check friendship status for each user
+      // Check friendship status for each user and get complete profile data
       const usersWithStatus = await Promise.all(
         users.map(async (user) => {
           console.log("Checking friendship status for user:", user.username);
           const { sentRequest, receivedRequest } = await checkFriendRequestExists(currentUser.uid, user.id);
           const isFriend = await checkFriendshipExists(currentUser.uid, user.id);
+          
+          // Get complete profile to ensure we have privacy settings
+          const fullProfile = await getUserProfile(user.id);
+          console.log("Full profile for user:", user.username, fullProfile);
           
           let status = null;
           if (isFriend) {
@@ -96,10 +100,22 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
             status = 'received';
           }
           
-          console.log("Status determined for", user.username, ":", status);
+          // Merge the privacy settings from the full profile
+          const privacySettings = fullProfile?.privacySettings || {
+            isPublicProfile: true,
+            autoAcceptFriends: true, // Default to true if not specified
+            showEmail: false,
+            showLocation: true,
+            showBoatDetails: true
+          };
+          
+          console.log("Status and privacy determined for", user.username, ":", 
+            { status, privacySettings });
+          
           return {
             ...user,
-            status
+            status,
+            privacySettings
           };
         })
       );
@@ -137,8 +153,15 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     try {
       console.log("Adding friend, user privacy settings:", user.privacySettings);
       
+      // Double-check privacy settings by getting the latest profile data
+      const latestProfile = await getUserProfile(user.id);
+      const autoAccept = latestProfile?.privacySettings?.autoAcceptFriends ?? true;
+      
+      console.log("Latest profile data for privacy check:", latestProfile);
+      console.log("Auto accept setting from latest profile:", autoAccept);
+      
       // Check if the user's privacy settings allow auto-accepting friends
-      if (user.privacySettings?.autoAcceptFriends) {
+      if (autoAccept) {
         console.log("Auto-accept is enabled, adding friend directly");
         await addFriendDirectly(currentUser.uid, user.id);
         toast({
