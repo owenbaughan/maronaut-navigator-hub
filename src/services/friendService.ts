@@ -43,7 +43,7 @@ interface UserProfileData {
   };
 }
 
-export interface FriendRequest {
+export interface FollowRequest {
   id: string;
   senderId: string;
   receiverId: string;
@@ -168,32 +168,58 @@ export const followUser = async (userId: string, targetUserId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", targetProfile.username);
     
-    await ensureCollectionExists('following');
-    console.log("Ensured following collection exists");
+    const autoAccept = targetProfile.privacySettings?.autoAcceptFriends !== false;
     
-    const followingCollection = collection(db, "following");
-    console.log("Using following collection path:", followingCollection.path);
-    
-    const timestamp = serverTimestamp() as Timestamp;
-    
-    const followData = {
-      userId,
-      followingId: targetUserId,
-      username: targetProfile.username,
-      photoURL: targetProfile.profilePicture || null,
-      timestamp
-    };
-    
-    console.log("Creating follow entry:", JSON.stringify(followData));
-    const followRef = await addDoc(followingCollection, followData);
-    console.log("Created follow entry with document ID:", followRef.id);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const verifyFollowing = await checkFollowingStatus(userId, targetUserId);
-    console.log("Verified following was created:", verifyFollowing);
-    
-    return verifyFollowing;
+    if (autoAccept) {
+      await ensureCollectionExists('following');
+      console.log("Ensured following collection exists");
+      
+      const followingCollection = collection(db, "following");
+      console.log("Using following collection path:", followingCollection.path);
+      
+      const timestamp = serverTimestamp() as Timestamp;
+      
+      const followData = {
+        userId,
+        followingId: targetUserId,
+        username: targetProfile.username,
+        photoURL: targetProfile.profilePicture || null,
+        timestamp
+      };
+      
+      console.log("Creating follow entry:", JSON.stringify(followData));
+      const followRef = await addDoc(followingCollection, followData);
+      console.log("Created follow entry with document ID:", followRef.id);
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const verifyFollowing = await checkFollowingStatus(userId, targetUserId);
+      console.log("Verified following was created:", verifyFollowing);
+      
+      return verifyFollowing;
+    } else {
+      await ensureCollectionExists('followRequests');
+      console.log("Ensured followRequests collection exists");
+      
+      const followRequestsCollection = collection(db, "followRequests");
+      
+      const timestamp = serverTimestamp() as Timestamp;
+      
+      const requestData = {
+        senderId: userId,
+        receiverId: targetUserId,
+        senderUsername: userProfile.username,
+        receiverUsername: targetProfile.username,
+        status: 'pending',
+        timestamp
+      };
+      
+      console.log("Creating follow request:", JSON.stringify(requestData));
+      const requestRef = await addDoc(followRequestsCollection, requestData);
+      console.log("Created follow request with document ID:", requestRef.id);
+      
+      return true;
+    }
   } catch (error) {
     console.error("Error adding follow relationship:", error);
     throw error;
@@ -204,7 +230,6 @@ export const unfollowUser = async (userId: string, targetUserId: string): Promis
   try {
     console.log(`Removing follow relationship between ${userId} -> ${targetUserId}`);
     
-    // Query for the follow document
     const followQuery = query(
       collection(db, "following"),
       where("userId", "==", userId),
@@ -213,7 +238,6 @@ export const unfollowUser = async (userId: string, targetUserId: string): Promis
     
     const snapshot = await getDocs(followQuery);
     
-    // Delete all documents found (should be at most one)
     const deletePromises: Promise<void>[] = [];
     
     snapshot.forEach((docSnapshot) => {
@@ -229,7 +253,6 @@ export const unfollowUser = async (userId: string, targetUserId: string): Promis
     await Promise.all(deletePromises);
     console.log(`Successfully removed follow relationship from ${userId} to ${targetUserId}`);
     
-    // Verify removal
     const verifyRemoval = await checkFollowingStatus(userId, targetUserId);
     if (verifyRemoval) {
       console.warn("Follow relationship still exists after removal attempt!");
@@ -327,6 +350,127 @@ export const getFollowers = async (userId: string) => {
   }
 };
 
+export const getFollowRequests = async (userId: string) => {
+  try {
+    console.log("Getting follow requests for user:", userId);
+    
+    await ensureCollectionExists('followRequests');
+    
+    const incomingQuery = query(
+      collection(db, "followRequests"),
+      where("receiverId", "==", userId),
+      where("status", "==", "pending")
+    );
+    
+    const outgoingQuery = query(
+      collection(db, "followRequests"),
+      where("senderId", "==", userId),
+      where("status", "==", "pending")
+    );
+    
+    const [incomingSnapshot, outgoingSnapshot] = await Promise.all([
+      getDocs(incomingQuery),
+      getDocs(outgoingQuery)
+    ]);
+    
+    const incomingRequests: FollowRequest[] = [];
+    const outgoingRequests: FollowRequest[] = [];
+    
+    incomingSnapshot.forEach(doc => {
+      const data = doc.data();
+      incomingRequests.push({
+        id: doc.id,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        status: data.status,
+        timestamp: data.timestamp,
+        senderUsername: data.senderUsername,
+        receiverUsername: data.receiverUsername
+      });
+    });
+    
+    outgoingSnapshot.forEach(doc => {
+      const data = doc.data();
+      outgoingRequests.push({
+        id: doc.id,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        status: data.status,
+        timestamp: data.timestamp,
+        senderUsername: data.senderUsername,
+        receiverUsername: data.receiverUsername
+      });
+    });
+    
+    return { incomingRequests, outgoingRequests };
+  } catch (error) {
+    console.error("Error getting follow requests:", error);
+    return { incomingRequests: [], outgoingRequests: [] };
+  }
+};
+
+export const acceptFollowRequest = async (requestId: string) => {
+  try {
+    console.log("Accepting follow request:", requestId);
+    
+    const requestRef = doc(db, "followRequests", requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      console.error("Follow request not found");
+      return false;
+    }
+    
+    const requestData = requestDoc.data();
+    const { senderId, receiverId } = requestData;
+    
+    await ensureCollectionExists('following');
+    
+    const followingCollection = collection(db, "following");
+    const timestamp = serverTimestamp() as Timestamp;
+    
+    const senderProfile = await getUserProfile(senderId);
+    
+    const followData = {
+      userId: senderId,
+      followingId: receiverId,
+      username: requestData.senderUsername || (senderProfile?.username || "Unknown"),
+      photoURL: senderProfile?.profilePicture || null,
+      timestamp
+    };
+    
+    await addDoc(followingCollection, followData);
+    
+    await updateDoc(requestRef, { status: 'accepted' });
+    
+    return true;
+  } catch (error) {
+    console.error("Error accepting follow request:", error);
+    return false;
+  }
+};
+
+export const rejectFollowRequest = async (requestId: string) => {
+  try {
+    console.log("Rejecting follow request:", requestId);
+    
+    const requestRef = doc(db, "followRequests", requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      console.error("Follow request not found");
+      return false;
+    }
+    
+    await updateDoc(requestRef, { status: 'declined' });
+    
+    return true;
+  } catch (error) {
+    console.error("Error rejecting follow request:", error);
+    return false;
+  }
+};
+
 export const checkFriendRequestExists = async (userId: string, targetUserId: string) => {
   return { sentRequest: null, receivedRequest: null };
 };
@@ -361,13 +505,13 @@ export const getFriends = async (userId: string) => {
 };
 
 export const getFriendRequests = async (userId: string) => {
-  return { incomingRequests: [], outgoingRequests: [] };
+  return await getFollowRequests(userId);
 };
 
 export const acceptFriendRequest = async (requestId: string) => {
-  return true;
+  return await acceptFollowRequest(requestId);
 };
 
 export const removeFriendRequest = async (requestId: string) => {
-  return true;
+  return await rejectFollowRequest(requestId);
 };

@@ -5,7 +5,7 @@ import {
   followUser, 
   checkFollowingStatus, 
 } from '@/services/friendService';
-import { Search, UserPlus, UserCheck } from 'lucide-react';
+import { Search, UserPlus, UserCheck, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -25,7 +25,7 @@ interface UserSearchResult {
     isPublicProfile: boolean;
     autoAcceptFriends: boolean;
   };
-  status?: 'following' | null;
+  status?: 'following' | 'requested' | null;
 }
 
 const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
@@ -153,25 +153,45 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         return;
       }
       
+      // Get target user's auto-accept setting
+      const targetProfile = await getUserProfile(user.id);
+      const autoAccept = targetProfile?.privacySettings?.autoAcceptFriends !== false;
+      
       // Follow user
       console.log(`Following user: ${currentUser.uid} -> ${user.id}`);
       const success = await followUser(currentUser.uid, user.id);
       console.log("Follow result:", success);
       
       if (success) {
-        toast({
-          title: "Now following",
-          description: `You are now following ${user.username}`,
-        });
-        
-        // Update the user's status in search results to 'following'
-        setSearchResults(prev => 
-          prev.map(result => 
-            result.id === user.id 
-              ? { ...result, status: 'following' } 
-              : result
-          )
-        );
+        if (autoAccept) {
+          toast({
+            title: "Now following",
+            description: `You are now following ${user.username}`,
+          });
+          
+          // Update the user's status in search results to 'following'
+          setSearchResults(prev => 
+            prev.map(result => 
+              result.id === user.id 
+                ? { ...result, status: 'following' } 
+                : result
+            )
+          );
+        } else {
+          toast({
+            title: "Follow request sent",
+            description: `A follow request has been sent to ${user.username}`,
+          });
+          
+          // Update the user's status in search results to 'requested'
+          setSearchResults(prev => 
+            prev.map(result => 
+              result.id === user.id 
+                ? { ...result, status: 'requested' } 
+                : result
+            )
+          );
+        }
         
         // Call the callback if provided to refresh the following list
         if (onUserAdded) {
@@ -252,6 +272,11 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                     <div className="flex items-center text-green-600">
                       <UserCheck size={18} className="mr-1" />
                       <span className="text-sm">Following</span>
+                    </div>
+                  ) : user.status === 'requested' ? (
+                    <div className="flex items-center text-amber-600">
+                      <Clock size={18} className="mr-1" />
+                      <span className="text-sm">Requested</span>
                     </div>
                   ) : (
                     <Button 

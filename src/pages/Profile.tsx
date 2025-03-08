@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -271,9 +272,9 @@ const Profile = () => {
                           
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <Label htmlFor="auto-accept">Auto-Accept Friend Requests</Label>
+                              <Label htmlFor="auto-accept">Auto-Accept Follow Requests</Label>
                               <p className="text-sm text-muted-foreground">
-                                Automatically accept all friend requests
+                                Automatically accept all follow requests
                               </p>
                             </div>
                             <Switch 
