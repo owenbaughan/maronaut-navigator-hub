@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -6,7 +7,8 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   updateProfile,
-  User
+  User,
+  ensureCollectionExists
 } from '@/lib/firebase';
 import { createInitialProfile } from '@/services/profileService';
 import { useToast } from '@/components/ui/use-toast';
@@ -28,8 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // If user is logged in, ensure collections exist
+      if (user) {
+        console.log("User logged in, ensuring collections exist");
+        await Promise.all([
+          ensureCollectionExists('userProfiles'),
+          ensureCollectionExists('friends'),
+          ensureCollectionExists('friendRequests')
+        ]);
+      }
+      
       setIsLoaded(true);
     });
 

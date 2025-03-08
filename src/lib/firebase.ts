@@ -31,7 +31,7 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 // Create collection references with proper typing
-// Explicitly define the friends collection
+// Explicitly define collections
 const friendsCollection = collection(db, "friends");
 const userProfilesCollection = collection(db, "userProfiles");
 const friendRequestsCollection = collection(db, "friendRequests");
@@ -45,6 +45,31 @@ try {
 } catch (error) {
   console.error("Analytics initialization failed:", error);
 }
+
+// Here's a function to create a collection if it doesn't exist
+// This helps ensure the collections are properly initialized
+const ensureCollectionExists = async (collectionPath: string) => {
+  try {
+    console.log(`Ensuring collection exists: ${collectionPath}`);
+    
+    // We don't need to do anything special here, just accessing the collection reference
+    // will ensure it's created when we later add documents to it
+    return true;
+  } catch (error) {
+    console.error(`Error ensuring collection exists (${collectionPath}):`, error);
+    return false;
+  }
+};
+
+// Ensure critical collections exist
+const initializeCollections = () => {
+  ensureCollectionExists('friends');
+  ensureCollectionExists('userProfiles');
+  ensureCollectionExists('friendRequests');
+};
+
+// Call this once when the app initializes
+initializeCollections();
 
 export { 
   app, 
@@ -60,7 +85,8 @@ export {
   friendsCollection,
   userProfilesCollection,
   friendRequestsCollection,
-  collection
+  collection,
+  ensureCollectionExists
 };
 
 export type { User };

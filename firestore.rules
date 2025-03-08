@@ -1,0 +1,45 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userProfiles/{userId} {
+      allow read: if request.auth != null; // Any authenticated user can read profiles
+      allow write: if request.auth.uid == userId; // Only users can modify their own profiles
+    }
+    
+    // Rules for the friends collection
+    match /friends/{docId} {
+      // Allow read if the user is one of the friends
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         resource.data.friendId == request.auth.uid);
+      
+      // Allow create if the user is creating an entry for themselves
+      allow create: if request.auth != null && 
+        (request.resource.data.userId == request.auth.uid || 
+         request.resource.data.friendId == request.auth.uid);
+         
+      // Allow update/delete if the user is one of the friends
+      allow update, delete: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || 
+         resource.data.friendId == request.auth.uid);
+    }
+    
+    // Rules for the friendRequests collection
+    match /friendRequests/{docId} {
+      // Allow read if the user is sender or receiver
+      allow read: if request.auth != null && 
+        (resource.data.senderId == request.auth.uid || 
+         resource.data.receiverId == request.auth.uid);
+      
+      // Allow create if the user is the sender
+      allow create: if request.auth != null && 
+        request.resource.data.senderId == request.auth.uid;
+        
+      // Allow update/delete if the user is sender or receiver
+      allow update, delete: if request.auth != null && 
+        (resource.data.senderId == request.auth.uid || 
+         resource.data.receiverId == request.auth.uid);
+    }
+  }
+}
