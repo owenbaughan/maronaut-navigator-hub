@@ -110,10 +110,9 @@ export const acceptFollowRequest = async (requestId: string) => {
     
     // Update the request status first (mark as accepted)
     try {
-      const timestamp = new Date();
       await updateDoc(requestRef, { 
         status: 'accepted',
-        updatedAt: timestamp
+        updatedAt: new Date()
       });
       console.log("Request updated to accepted");
     } catch (updateError) {
@@ -125,15 +124,12 @@ export const acceptFollowRequest = async (requestId: string) => {
     try {
       console.log("Creating follow relationship document in following collection");
       
-      // Using a plain JS object with current timestamp
-      const timestamp = new Date();
-      
       const followData = {
         userId: senderId, // Who is doing the following
         followingId: receiverId, // Who is being followed
         username: senderProfile?.username || senderUsername || "Unknown",
         photoURL: senderProfile?.profilePicture || null,
-        timestamp: timestamp
+        timestamp: new Date()
       };
       
       console.log("Adding follow relationship with data:", JSON.stringify(followData));
