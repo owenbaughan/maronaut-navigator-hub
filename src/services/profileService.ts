@@ -1,3 +1,4 @@
+
 import { db, storage } from "../lib/firebase";
 import { 
   doc, 
@@ -17,6 +18,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 export interface PrivacySettings {
   isPublicProfile: boolean;
   autoAcceptFollows: boolean;
+  // For backward compatibility, include both field names
+  autoAcceptFriends?: boolean;
   showEmail: boolean;
   showLocation: boolean;
   showBoatDetails: boolean;
@@ -108,6 +111,7 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
 export const getDefaultPrivacySettings = (): PrivacySettings => ({
   isPublicProfile: true,
   autoAcceptFollows: true,
+  autoAcceptFriends: true, // Include for backward compatibility
   showEmail: false,
   showLocation: true,
   showBoatDetails: true

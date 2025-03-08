@@ -45,14 +45,7 @@ const Profile = () => {
           // Initialize privacy settings from profile if they exist
           if (profile.privacySettings) {
             setIsPublicProfile(profile.privacySettings.isPublicProfile ?? true);
-            
-            // Handle both old and new field names for backward compatibility
-            setAutoAcceptFollows(
-              profile.privacySettings.autoAcceptFollows ?? 
-              profile.privacySettings.autoAcceptFriends ?? 
-              true
-            );
-            
+            setAutoAcceptFollows(profile.privacySettings.autoAcceptFollows ?? true);
             setShowEmail(profile.privacySettings.showEmail ?? false);
             setShowLocation(profile.privacySettings.showLocation ?? true);
             setShowBoatDetails(profile.privacySettings.showBoatDetails ?? true);

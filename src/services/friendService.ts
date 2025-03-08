@@ -37,7 +37,8 @@ interface UserProfileData {
   profilePicture?: string | null;
   privacySettings?: {
     isPublicProfile: boolean;
-    autoAcceptFriends: boolean;
+    autoAcceptFollows?: boolean;
+    autoAcceptFriends?: boolean;
     showEmail?: boolean;
     showLocation?: boolean;
     showBoatDetails?: boolean;
@@ -169,9 +170,8 @@ export const followUser = async (userId: string, targetUserId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", targetProfile.username);
     
-    // Use autoAcceptFollows instead of autoAcceptFriends, with fallback for backward compatibility
-    const autoAccept = targetProfile.privacySettings?.autoAcceptFollows !== false && 
-                       targetProfile.privacySettings?.autoAcceptFriends !== false;
+    // Use autoAcceptFollows, with fallback for backward compatibility
+    const autoAccept = targetProfile.privacySettings?.autoAcceptFollows !== false;
     
     if (autoAccept) {
       await ensureCollectionExists('following');

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   searchUsers, 
@@ -23,7 +22,7 @@ interface UserSearchResult {
   profilePicture: string | null;
   privacySettings?: {
     isPublicProfile: boolean;
-    autoAcceptFriends: boolean;
+    autoAcceptFollows: boolean;
   };
   status?: 'following' | 'requested' | null;
 }
@@ -155,8 +154,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       
       // Get target user's auto-accept setting
       const targetProfile = await getUserProfile(user.id);
-      const autoAccept = targetProfile?.privacySettings?.autoAcceptFollows !== false && 
-                         targetProfile?.privacySettings?.autoAcceptFriends !== false;
+      const autoAccept = targetProfile?.privacySettings?.autoAcceptFollows !== false;
       
       // Follow user
       console.log(`Following user: ${currentUser.uid} -> ${user.id}`);
