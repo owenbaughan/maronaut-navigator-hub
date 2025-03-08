@@ -4,6 +4,7 @@ import {
   searchUsers, 
   followUser, 
   checkFollowingStatus, 
+  getFollowRequests,
 } from '@/services/friendService';
 import { Search, UserPlus, UserCheck, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,10 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         return;
       }
       
+      // Get all pending follow requests to check against search results
+      const { outgoingRequests } = await getFollowRequests(currentUser.uid);
+      console.log("Current outgoing requests:", outgoingRequests);
+      
       // Check following status for each user
       const usersWithStatus = await Promise.all(
         users.map(async (user) => {
@@ -84,6 +89,16 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
           let status = null;
           if (isFollowing) {
             status = 'following';
+          } else {
+            // Check if there's a pending request
+            const hasPendingRequest = outgoingRequests.some(
+              request => request.receiverId === user.id && request.status === 'pending'
+            );
+            
+            if (hasPendingRequest) {
+              status = 'requested';
+              console.log(`User ${user.username} has a pending follow request`);
+            }
           }
           
           return {
@@ -122,6 +137,15 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
 
   const handleFollowUser = async (user: UserSearchResult) => {
     if (!currentUser) return;
+    
+    // Prevent follow action if this user already has a pending request
+    if (user.status === 'requested') {
+      toast({
+        title: "Request pending",
+        description: `You already have a pending follow request for ${user.username}`,
+      });
+      return;
+    }
     
     try {
       setIsFollowingUser(true);
@@ -234,6 +258,10 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const getFollowButtonText = (user: UserSearchResult) => {
     if (isFollowingUser && processingUserId === user.id) {
       return "Processing...";
+    }
+    
+    if (user.status === 'requested') {
+      return "Requested";
     }
     
     // If either setting is explicitly set to false, request to follow
