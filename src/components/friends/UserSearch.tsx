@@ -2,12 +2,10 @@
 import React, { useState } from 'react';
 import { 
   searchUsers, 
-  sendFriendRequest, 
-  addFriendDirectly, 
-  checkFriendRequestExists, 
-  checkFriendshipExists 
+  followUser, 
+  checkFollowingStatus, 
 } from '@/services/friendService';
-import { Search, UserPlus, UserCheck, Clock } from 'lucide-react';
+import { Search, UserPlus, UserCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -27,7 +25,7 @@ interface UserSearchResult {
     isPublicProfile: boolean;
     autoAcceptFriends: boolean;
   };
-  status?: 'friend' | 'pending' | 'received' | null;
+  status?: 'following' | null;
 }
 
 const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
@@ -36,7 +34,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [noResults, setNoResults] = useState(false);
-  const [isAddingFriend, setIsAddingFriend] = useState(false);
+  const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -60,19 +58,12 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     setNoResults(false);
     
     try {
-      console.log(`Searching for username: "${searchQuery}" from user ID: ${currentUser.uid}, displayName: ${currentUser.displayName || 'No display name'}`);
-      
-      // Special debug for gracejeanne user
-      if (searchQuery.toLowerCase().includes('grace')) {
-        console.log("🔎 SEARCHING FOR GRACE: Looking for a username containing 'grace'");
-      }
+      console.log(`Searching for username: "${searchQuery}" from user ID: ${currentUser.uid}`);
       
       const users = await searchUsers(searchQuery, currentUser.uid);
       console.log("Search results returned:", users.length, "users");
-      console.log("Raw search results:", JSON.stringify(users));
       
       if (users.length === 0) {
-        console.log("⚠️ No results found for query:", searchQuery);
         setNoResults(true);
         setSearchResults([]);
         toast({
@@ -83,42 +74,20 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         return;
       }
       
-      // Check friendship status for each user and get complete profile data
+      // Check following status for each user
       const usersWithStatus = await Promise.all(
         users.map(async (user) => {
-          console.log("Checking friendship status for user:", user.username);
-          const { sentRequest, receivedRequest } = await checkFriendRequestExists(currentUser.uid, user.id);
-          const isFriend = await checkFriendshipExists(currentUser.uid, user.id);
-          
-          // Get complete profile to ensure we have privacy settings
-          const fullProfile = await getUserProfile(user.id);
-          console.log("Full profile for user:", user.username, fullProfile);
+          console.log("Checking following status for user:", user.username);
+          const isFollowing = await checkFollowingStatus(currentUser.uid, user.id);
           
           let status = null;
-          if (isFriend) {
-            status = 'friend';
-          } else if (sentRequest) {
-            status = 'pending';
-          } else if (receivedRequest) {
-            status = 'received';
+          if (isFollowing) {
+            status = 'following';
           }
-          
-          // Merge the privacy settings from the full profile
-          const privacySettings = fullProfile?.privacySettings || {
-            isPublicProfile: true,
-            autoAcceptFriends: true, // Default to true if not specified
-            showEmail: false,
-            showLocation: true,
-            showBoatDetails: true
-          };
-          
-          console.log("Status and privacy determined for", user.username, ":", 
-            { status, privacySettings });
           
           return {
             ...user,
-            status,
-            privacySettings
+            status
           };
         })
       );
@@ -150,30 +119,29 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     }
   };
 
-  const handleAddFriend = async (user: UserSearchResult) => {
+  const handleFollowUser = async (user: UserSearchResult) => {
     if (!currentUser) return;
     
     try {
-      setIsAddingFriend(true);
+      setIsFollowingUser(true);
       setProcessingUserId(user.id);
       
-      console.log(`Starting friend addition process for user ${user.username} (${user.id})`);
-      console.log("User privacy settings:", user.privacySettings);
+      console.log(`Starting follow process for user ${user.username} (${user.id})`);
       
-      // Double-check if already friends first
-      const alreadyFriends = await checkFriendshipExists(currentUser.uid, user.id);
-      if (alreadyFriends) {
-        console.log("Already friends, updating UI only");
+      // Double-check if already following first
+      const alreadyFollowing = await checkFollowingStatus(currentUser.uid, user.id);
+      if (alreadyFollowing) {
+        console.log("Already following this user, updating UI only");
         toast({
-          title: "Already friends",
-          description: `You are already friends with ${user.username}`,
+          title: "Already following",
+          description: `You are already following ${user.username}`,
         });
         
-        // Update the user's status in search results to 'friend'
+        // Update the user's status in search results to 'following'
         setSearchResults(prev => 
           prev.map(result => 
             result.id === user.id 
-              ? { ...result, status: 'friend' } 
+              ? { ...result, status: 'following' } 
               : result
           )
         );
@@ -185,85 +153,47 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         return;
       }
       
-      // Double-check privacy settings by getting the latest profile data
-      const latestProfile = await getUserProfile(user.id);
-      console.log("Latest profile data for privacy check:", latestProfile);
+      // Follow user
+      console.log(`Following user: ${currentUser.uid} -> ${user.id}`);
+      const success = await followUser(currentUser.uid, user.id);
+      console.log("Follow result:", success);
       
-      const autoAccept = latestProfile?.privacySettings?.autoAcceptFriends ?? true;
-      console.log("Auto accept setting from latest profile:", autoAccept);
-      
-      // Check if the user's privacy settings allow auto-accepting friends
-      if (autoAccept) {
-        console.log("Auto-accept is enabled, adding friend directly");
-        
-        // Add friend directly using the improved function
-        console.log(`Adding friend directly: ${currentUser.uid} -> ${user.id}`);
-        const success = await addFriendDirectly(currentUser.uid, user.id);
-        console.log("Friend addition result:", success);
-        
-        // Verify that the friendship was created successfully to confirm it's in the database
-        const friendshipCreated = await checkFriendshipExists(currentUser.uid, user.id);
-        console.log("Friendship created confirmation:", friendshipCreated);
-        
-        if (friendshipCreated) {
-          toast({
-            title: "Friend added",
-            description: `${user.username} is now your friend`,
-          });
-          
-          // Update the user's status in search results to 'friend'
-          setSearchResults(prev => 
-            prev.map(result => 
-              result.id === user.id 
-                ? { ...result, status: 'friend' } 
-                : result
-            )
-          );
-          
-          // Call the callback if provided to refresh the friends list
-          if (onUserAdded) {
-            console.log("Calling onUserAdded callback to refresh friends list");
-            onUserAdded();
-          }
-        } else {
-          console.error("Friendship verification failed after addition");
-          toast({
-            title: "Failed to add friend",
-            description: "There was a problem creating the friendship",
-            variant: "destructive"
-          });
-        }
-      } else {
-        console.log("Auto-accept is disabled, sending friend request");
-        await sendFriendRequest(currentUser.uid, user.id);
+      if (success) {
         toast({
-          title: "Friend request sent",
-          description: `A friend request has been sent to ${user.username}`,
+          title: "Now following",
+          description: `You are now following ${user.username}`,
         });
         
-        // Update the user's status in search results to 'pending'
+        // Update the user's status in search results to 'following'
         setSearchResults(prev => 
           prev.map(result => 
             result.id === user.id 
-              ? { ...result, status: 'pending' } 
+              ? { ...result, status: 'following' } 
               : result
           )
         );
         
-        // Call the callback if provided
+        // Call the callback if provided to refresh the following list
         if (onUserAdded) {
+          console.log("Calling onUserAdded callback to refresh following list");
           onUserAdded();
         }
+      } else {
+        toast({
+          title: "Failed to follow",
+          description: "There was a problem following this user",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error("Error adding friend:", error);
+      console.error("Error following user:", error);
       toast({
-        title: "Friend request failed",
-        description: "There was a problem sending the friend request",
+        title: "Failed to follow",
+        description: "There was a problem following this user",
         variant: "destructive"
       });
     } finally {
-      setIsAddingFriend(false);
+      setIsFollowingUser(false);
       setProcessingUserId(null);
     }
   };
@@ -317,31 +247,21 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                     </div>
                   </div>
                   
-                  {/* Friendship status buttons */}
-                  {user.status === 'friend' ? (
+                  {/* Following status buttons */}
+                  {user.status === 'following' ? (
                     <div className="flex items-center text-green-600">
                       <UserCheck size={18} className="mr-1" />
-                      <span className="text-sm">Friend</span>
-                    </div>
-                  ) : user.status === 'pending' ? (
-                    <div className="flex items-center text-maronaut-500">
-                      <Clock size={18} className="mr-1" />
-                      <span className="text-sm">Pending</span>
-                    </div>
-                  ) : user.status === 'received' ? (
-                    <div className="flex items-center text-maronaut-500">
-                      <Clock size={18} className="mr-1" />
-                      <span className="text-sm">Request Received</span>
+                      <span className="text-sm">Following</span>
                     </div>
                   ) : (
                     <Button 
                       size="sm"
                       className="bg-maronaut-500 hover:bg-maronaut-600"
-                      onClick={() => handleAddFriend(user)}
-                      disabled={isAddingFriend && processingUserId === user.id}
+                      onClick={() => handleFollowUser(user)}
+                      disabled={isFollowingUser && processingUserId === user.id}
                     >
                       <UserPlus size={16} className="mr-1" />
-                      {isAddingFriend && processingUserId === user.id ? 'Adding...' : 'Add Friend'}
+                      {isFollowingUser && processingUserId === user.id ? 'Following...' : 'Follow'}
                     </Button>
                   )}
                 </div>

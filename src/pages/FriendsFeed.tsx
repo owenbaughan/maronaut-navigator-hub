@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import TripTimeline from '../components/friends/TripTimeline';
-import { Search, UserCheck, UserPlus, UserMinus, AlertCircle } from 'lucide-react';
+import { Search, UserCheck, UserPlus, UserMinus, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,13 +12,10 @@ import { useAuth } from '@/context/AuthContext';
 import UserSearch from '@/components/friends/UserSearch';
 import { useToast } from '@/components/ui/use-toast';
 import { 
-  FriendData, 
-  FriendRequest, 
-  getFriends, 
-  getFriendRequests, 
-  acceptFriendRequest, 
-  removeFriendRequest,
-  removeFriend
+  FollowingData, 
+  getFollowing, 
+  getFollowers,
+  unfollowUser
 } from '@/services/friendService';
 import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
 import {
@@ -36,43 +34,42 @@ const FriendsFeed = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   
-  const [friends, setFriends] = useState<FriendData[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
+  const [following, setFollowing] = useState<FollowingData[]>([]);
+  const [followers, setFollowers] = useState<FollowingData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [removingFriendId, setRemovingFriendId] = useState<string | null>(null);
+  const [unfollowingUserId, setUnfollowingUserId] = useState<string | null>(null);
   
-  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
   useEffect(() => {
     window.scrollTo(0, 0);
     
     if (currentUser) {
-      fetchFriendsData();
+      fetchFollowData();
     }
   }, [currentUser]);
   
-  const fetchFriendsData = async () => {
+  const fetchFollowData = async () => {
     if (!currentUser) return;
     
     setIsLoading(true);
     try {
-      console.log("Fetching friends data for user:", currentUser.uid);
+      console.log("Fetching follow data for user:", currentUser.uid);
       
-      const friendsList = await getFriends(currentUser.uid);
-      console.log("Fetched friends:", friendsList.length, friendsList);
-      setFriends(friendsList);
+      const followingList = await getFollowing(currentUser.uid);
+      console.log("Fetched following:", followingList.length);
+      setFollowing(followingList);
       
-      const { incomingRequests: incoming, outgoingRequests: outgoing } = await getFriendRequests(currentUser.uid);
-      console.log("Fetched incoming requests:", incoming.length, "outgoing requests:", outgoing.length);
-      setIncomingRequests(incoming);
-      setPendingRequests(outgoing);
+      const followersList = await getFollowers(currentUser.uid);
+      console.log("Fetched followers:", followersList.length);
+      setFollowers(followersList);
+      
     } catch (error) {
-      console.error("Error fetching friends data:", error);
+      console.error("Error fetching follow data:", error);
       toast({
-        title: "Failed to load friends",
-        description: "There was a problem loading your friends and requests",
+        title: "Failed to load following/followers",
+        description: "There was a problem loading your network connections",
         variant: "destructive"
       });
     } finally {
@@ -80,99 +77,41 @@ const FriendsFeed = () => {
     }
   };
   
-  const handleAcceptRequest = async (requestId: string) => {
-    try {
-      await acceptFriendRequest(requestId);
-      toast({
-        title: "Friend request accepted",
-        description: "You are now friends with this user",
-      });
-      
-      setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
-      await fetchFriendsData();
-    } catch (error) {
-      console.error("Error accepting friend request:", error);
-      toast({
-        title: "Failed to accept request",
-        description: "There was a problem accepting the friend request",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleRejectRequest = async (requestId: string) => {
-    try {
-      await removeFriendRequest(requestId);
-      toast({
-        title: "Friend request declined",
-        description: "The friend request has been declined",
-      });
-      
-      setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
-    } catch (error) {
-      console.error("Error rejecting friend request:", error);
-      toast({
-        title: "Failed to decline request",
-        description: "There was a problem declining the friend request",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleCancelRequest = async (requestId: string) => {
-    try {
-      await removeFriendRequest(requestId);
-      toast({
-        title: "Friend request cancelled",
-        description: "Your friend request has been cancelled",
-      });
-      
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-    } catch (error) {
-      console.error("Error cancelling friend request:", error);
-      toast({
-        title: "Failed to cancel request",
-        description: "There was a problem cancelling the friend request",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleRemoveFriend = async (friendId: string) => {
+  const handleUnfollowUser = async (targetUserId: string) => {
     if (!currentUser) return;
     
     try {
       setIsLoading(true);
-      const success = await removeFriend(currentUser.uid, friendId);
+      const success = await unfollowUser(currentUser.uid, targetUserId);
       
       if (success) {
-        setFriends(prev => prev.filter(friend => friend.friendId !== friendId));
+        setFollowing(prev => prev.filter(user => user.followingId !== targetUserId));
         toast({
-          title: "Friend removed",
-          description: "You are no longer friends with this user",
+          title: "Unfollowed",
+          description: "You are no longer following this user",
         });
       } else {
         toast({
-          title: "Failed to remove friend",
-          description: "There was a problem removing this friend",
+          title: "Failed to unfollow",
+          description: "There was a problem unfollowing this user",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Error removing friend:", error);
+      console.error("Error unfollowing user:", error);
       toast({
-        title: "Failed to remove friend",
-        description: "There was a problem removing this friend",
+        title: "Failed to unfollow",
+        description: "There was a problem unfollowing this user",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
-      setRemovingFriendId(null);
+      setUnfollowingUserId(null);
     }
   };
 
-  const handleViewFriendProfile = (friendId: string) => {
-    setSelectedFriendId(friendId);
+  const handleViewUserProfile = (userId: string) => {
+    setSelectedUserId(userId);
     setProfileDialogOpen(true);
   };
 
@@ -188,55 +127,55 @@ const FriendsFeed = () => {
               </h1>
               
               <div className="glass-panel p-6 animate-fade-in mb-8">
-                <UserSearch onUserAdded={fetchFriendsData} />
+                <UserSearch onUserAdded={fetchFollowData} />
               </div>
               
               <Tabs defaultValue="trips" className="animate-fade-in mb-10">
                 <TabsList className="grid grid-cols-3 w-full mb-6">
                   <TabsTrigger value="trips">Trips</TabsTrigger>
-                  <TabsTrigger value="friends">Friends</TabsTrigger>
-                  <TabsTrigger value="requests">Friend Requests</TabsTrigger>
+                  <TabsTrigger value="following">Following</TabsTrigger>
+                  <TabsTrigger value="followers">Followers</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="trips">
                   <TripTimeline />
                 </TabsContent>
                 
-                <TabsContent value="friends">
+                <TabsContent value="following">
                   <Card>
                     <CardHeader>
-                      <CardTitle>My Friends</CardTitle>
+                      <CardTitle>Following</CardTitle>
                       <CardDescription>
-                        View and manage your current friends.
+                        Sailors you are following
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {isLoading ? (
                         <div className="text-center p-6">
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-maronaut-700 mx-auto"></div>
-                          <p className="mt-4 text-maronaut-600">Loading friends...</p>
+                          <p className="mt-4 text-maronaut-600">Loading following...</p>
                         </div>
-                      ) : friends.length === 0 ? (
+                      ) : following.length === 0 ? (
                         <div className="text-center p-6 text-maronaut-500">
-                          You don't have any friends yet. Search for sailors to connect with!
+                          You're not following anyone yet. Search for sailors to connect with!
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {friends.map(friend => (
-                            <div key={friend.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
+                          {following.map(user => (
+                            <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                  {friend.username?.charAt(0).toUpperCase() || '?'}
+                                  {user.username?.charAt(0).toUpperCase() || '?'}
                                 </div>
                                 <div>
-                                  <p className="font-medium">{friend.username}</p>
+                                  <p className="font-medium">{user.username}</p>
                                 </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  onClick={() => handleViewFriendProfile(friend.friendId)}
+                                  onClick={() => handleViewUserProfile(user.followingId)}
                                 >
                                   View Profile
                                 </Button>
@@ -249,24 +188,24 @@ const FriendsFeed = () => {
                                       className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
                                     >
                                       <UserMinus className="h-4 w-4 mr-1" />
-                                      Remove
+                                      Unfollow
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Remove Friend</AlertDialogTitle>
+                                      <AlertDialogTitle>Unfollow User</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to remove {friend.username} from your friends? 
-                                        This action cannot be undone.
+                                        Are you sure you want to unfollow {user.username}? 
+                                        You'll no longer see their trips in your feed.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction 
                                         className="bg-red-500 hover:bg-red-600"
-                                        onClick={() => handleRemoveFriend(friend.friendId)}
+                                        onClick={() => handleUnfollowUser(user.followingId)}
                                       >
-                                        Remove
+                                        Unfollow
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -280,111 +219,49 @@ const FriendsFeed = () => {
                   </Card>
                 </TabsContent>
                 
-                <TabsContent value="requests">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Incoming Requests</CardTitle>
-                        <CardDescription>
-                          Friend requests you've received
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {isLoading ? (
-                          <div className="text-center p-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maronaut-700 mx-auto"></div>
-                          </div>
-                        ) : incomingRequests.length === 0 ? (
-                          <div className="text-center p-4 text-maronaut-500">
-                            No incoming friend requests
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {incomingRequests.map(request => (
-                              <div key={request.id} className="p-3 rounded-lg border border-maronaut-200">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                    {request.senderUsername?.charAt(0).toUpperCase() || '?'}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{request.senderUsername}</p>
-                                    <p className="text-xs text-maronaut-500">
-                                      {request.timestamp ? new Date(request.timestamp.toDate()).toLocaleDateString() : 'Just now'}
-                                    </p>
-                                  </div>
+                <TabsContent value="followers">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Followers</CardTitle>
+                      <CardDescription>
+                        Sailors who are following you
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <div className="text-center p-6">
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-maronaut-700 mx-auto"></div>
+                          <p className="mt-4 text-maronaut-600">Loading followers...</p>
+                        </div>
+                      ) : followers.length === 0 ? (
+                        <div className="text-center p-6 text-maronaut-500">
+                          You don't have any followers yet.
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {followers.map(user => (
+                            <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
+                                  {user.username?.charAt(0).toUpperCase() || '?'}
                                 </div>
-                                <div className="flex gap-2 mt-2">
-                                  <Button 
-                                    size="sm" 
-                                    className="w-full bg-maronaut-500 hover:bg-maronaut-600"
-                                    onClick={() => handleAcceptRequest(request.id)}
-                                  >
-                                    Accept
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="w-full" 
-                                    onClick={() => handleRejectRequest(request.id)}
-                                  >
-                                    Decline
-                                  </Button>
+                                <div>
+                                  <p className="font-medium">{user.username}</p>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Pending Requests</CardTitle>
-                        <CardDescription>
-                          Friend requests you've sent
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {isLoading ? (
-                          <div className="text-center p-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maronaut-700 mx-auto"></div>
-                          </div>
-                        ) : pendingRequests.length === 0 ? (
-                          <div className="text-center p-4 text-maronaut-500">
-                            No pending friend requests
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {pendingRequests.map(request => (
-                              <div key={request.id} className="p-3 rounded-lg border border-maronaut-200">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                      {request.receiverUsername?.charAt(0).toUpperCase() || '?'}
-                                    </div>
-                                    <div>
-                                      <p className="font-medium">{request.receiverUsername}</p>
-                                      <p className="text-xs text-maronaut-500">
-                                        {request.timestamp ? new Date(request.timestamp.toDate()).toLocaleDateString() : 'Just now'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-                                    onClick={() => handleCancelRequest(request.id)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewUserProfile(user.userId)}
+                              >
+                                View Profile
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
             </div>
@@ -396,7 +273,7 @@ const FriendsFeed = () => {
       <FriendProfileDialog
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
-        friendId={selectedFriendId}
+        friendId={selectedUserId}
       />
     </div>
   );

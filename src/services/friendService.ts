@@ -21,6 +21,28 @@ import {
 } from "firebase/firestore";
 import { getUserProfile } from "./profileService";
 
+export interface FollowingData {
+  id: string;
+  userId: string;
+  followingId: string;
+  timestamp: Timestamp;
+  username?: string;
+  photoURL?: string | null;
+}
+
+interface UserProfileData {
+  userId: string;
+  username: string;
+  profilePicture?: string | null;
+  privacySettings?: {
+    isPublicProfile: boolean;
+    autoAcceptFriends: boolean;
+    showEmail?: boolean;
+    showLocation?: boolean;
+    showBoatDetails?: boolean;
+  };
+}
+
 export interface FriendRequest {
   id: string;
   senderId: string;
@@ -38,19 +60,6 @@ export interface FriendData {
   timestamp: Timestamp;
   username?: string;
   photoURL?: string | null;
-}
-
-interface UserProfileData {
-  userId: string;
-  username: string;
-  profilePicture?: string | null;
-  privacySettings?: {
-    isPublicProfile: boolean;
-    autoAcceptFriends: boolean;
-    showEmail?: boolean;
-    showLocation?: boolean;
-    showBoatDetails?: boolean;
-  };
 }
 
 export const searchUsers = async (searchQuery: string, currentUserId: string) => {
@@ -73,11 +82,6 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
     }
     
     const users: any[] = [];
-    
-    console.log("All profiles in database:");
-    querySnapshot.forEach((doc) => {
-      console.log("Document ID:", doc.id, "Data:", JSON.stringify(doc.data()));
-    });
     
     querySnapshot.forEach((doc) => {
       const userData = doc.data() as UserProfileData;
@@ -120,363 +124,250 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
   }
 };
 
-export const checkFriendRequestExists = async (userId: string, targetUserId: string) => {
+export const checkFollowingStatus = async (userId: string, targetUserId: string) => {
   try {
-    const requestsRef = collection(db, "friendRequests");
+    console.log(`Checking if user ${userId} is following ${targetUserId}`);
     
-    const sentQuery = query(
-      requestsRef,
-      where("senderId", "==", userId),
-      where("receiverId", "==", targetUserId)
-    );
-    
-    const receivedQuery = query(
-      requestsRef,
-      where("senderId", "==", targetUserId),
-      where("receiverId", "==", userId)
-    );
-    
-    const [sentSnapshot, receivedSnapshot] = await Promise.all([
-      getDocs(sentQuery),
-      getDocs(receivedQuery)
-    ]);
-    
-    const sentRequest = !sentSnapshot.empty ? 
-      { id: sentSnapshot.docs[0].id, ...sentSnapshot.docs[0].data() as FriendRequest } : 
-      null;
-      
-    const receivedRequest = !receivedSnapshot.empty ? 
-      { id: receivedSnapshot.docs[0].id, ...receivedSnapshot.docs[0].data() as FriendRequest } : 
-      null;
-    
-    return { sentRequest, receivedRequest };
-  } catch (error) {
-    console.error("Error checking friend request:", error);
-    return { sentRequest: null, receivedRequest: null };
-  }
-};
-
-export const checkFriendshipExists = async (userId: string, targetUserId: string) => {
-  try {
-    console.log(`Checking if friendship exists between ${userId} and ${targetUserId}`);
-    
-    const query1 = query(
-      friendsCollection,
+    const followingQuery = query(
+      collection(db, "following"),
       where("userId", "==", userId),
-      where("friendId", "==", targetUserId)
+      where("followingId", "==", targetUserId)
     );
     
-    const query2 = query(
-      friendsCollection,
-      where("userId", "==", targetUserId),
-      where("friendId", "==", userId)
-    );
+    const snapshot = await getDocs(followingQuery);
+    const isFollowing = !snapshot.empty;
     
-    const [snapshot1, snapshot2] = await Promise.all([
-      getDocs(query1),
-      getDocs(query2)
-    ]);
+    console.log(`User ${userId} is following ${targetUserId}: ${isFollowing}`);
     
-    const exists = !snapshot1.empty || !snapshot2.empty;
-    console.log(`Friendship exists between ${userId} and ${targetUserId}: ${exists}`);
-    console.log("Friendship check results:", 
-      `Direction 1: ${snapshot1.size} records`, 
-      `Direction 2: ${snapshot2.size} records`);
-    
-    return exists;
+    return isFollowing;
   } catch (error) {
-    console.error("Error checking friendship:", error);
+    console.error("Error checking following status:", error);
     return false;
   }
 };
 
-export const sendFriendRequest = async (senderId: string, receiverId: string) => {
+export const followUser = async (userId: string, targetUserId: string) => {
   try {
-    console.log(`Sending friend request from ${senderId} to ${receiverId}`);
+    console.log(`Adding follow relationship: ${userId} -> ${targetUserId}`);
     
-    const [senderProfile, receiverProfile] = await Promise.all([
-      getUserProfile(senderId),
-      getUserProfile(receiverId)
-    ]);
-    
-    if (!senderProfile || !receiverProfile) {
-      throw new Error("Could not find user profiles");
-    }
-    
-    const requestData: Omit<FriendRequest, 'id'> = {
-      senderId,
-      receiverId,
-      status: 'pending',
-      timestamp: serverTimestamp() as Timestamp,
-      senderUsername: senderProfile.username,
-      receiverUsername: receiverProfile.username
-    };
-    
-    const requestRef = await addDoc(collection(db, "friendRequests"), requestData);
-    console.log("Friend request sent with ID:", requestRef.id);
-    
-    return { id: requestRef.id, ...requestData };
-  } catch (error) {
-    console.error("Error sending friend request:", error);
-    throw error;
-  }
-};
-
-export const addFriendDirectly = async (userId: string, friendId: string) => {
-  try {
-    console.log(`Adding friend directly: ${userId} and ${friendId}`);
-    
-    const alreadyFriends = await checkFriendshipExists(userId, friendId);
-    if (alreadyFriends) {
-      console.log("Users are already friends, skipping friend creation");
+    const alreadyFollowing = await checkFollowingStatus(userId, targetUserId);
+    if (alreadyFollowing) {
+      console.log("User already follows this target, skipping follow creation");
       return true;
     }
     
-    const [userProfile, friendProfile] = await Promise.all([
+    const [userProfile, targetProfile] = await Promise.all([
       getUserProfile(userId),
-      getUserProfile(friendId)
+      getUserProfile(targetUserId)
     ]);
     
-    if (!userProfile || !friendProfile) {
-      console.error("Could not find user profiles for either", userId, "or", friendId);
+    if (!userProfile || !targetProfile) {
+      console.error("Could not find user profiles for either", userId, "or", targetUserId);
       throw new Error("Could not find user profiles");
     }
     
-    console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
+    console.log("Found profiles:", userProfile.username, "and", targetProfile.username);
     
-    await ensureCollectionExists('friends');
-    console.log("Ensured friends collection exists");
+    await ensureCollectionExists('following');
+    console.log("Ensured following collection exists");
     
-    const friendsCol = collection(db, "friends");
-    console.log("Using friends collection path:", friendsCol.path);
+    const followingCollection = collection(db, "following");
+    console.log("Using following collection path:", followingCollection.path);
     
     const timestamp = serverTimestamp() as Timestamp;
     
-    const userFriendData = {
+    const followData = {
       userId,
-      friendId,
-      username: friendProfile.username,
-      photoURL: friendProfile.profilePicture || null,
+      followingId: targetUserId,
+      username: targetProfile.username,
+      photoURL: targetProfile.profilePicture || null,
       timestamp
     };
     
-    console.log("Creating first friend entry (user->friend):", JSON.stringify(userFriendData));
-    const userFriendRef = await addDoc(friendsCol, userFriendData);
-    console.log("Created first friend entry with document ID:", userFriendRef.id);
-    
-    const friendUserData = {
-      userId: friendId,
-      friendId: userId,
-      username: userProfile.username,
-      photoURL: userProfile.profilePicture || null,
-      timestamp
-    };
-    
-    console.log("Creating second friend entry (friend->user):", JSON.stringify(friendUserData));
-    const friendUserRef = await addDoc(friendsCol, friendUserData);
-    console.log("Created second friend entry with document ID:", friendUserRef.id);
+    console.log("Creating follow entry:", JSON.stringify(followData));
+    const followRef = await addDoc(followingCollection, followData);
+    console.log("Created follow entry with document ID:", followRef.id);
     
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const verifyFriendship = await checkFriendshipExists(userId, friendId);
-    console.log("Verified friendship was created:", verifyFriendship);
+    const verifyFollowing = await checkFollowingStatus(userId, targetUserId);
+    console.log("Verified following was created:", verifyFollowing);
     
-    return verifyFriendship;
+    return verifyFollowing;
   } catch (error) {
-    console.error("Error adding friend directly:", error);
+    console.error("Error adding follow relationship:", error);
     throw error;
   }
 };
 
-export const acceptFriendRequest = async (requestId: string) => {
+export const unfollowUser = async (userId: string, targetUserId: string): Promise<boolean> => {
   try {
-    console.log("Accepting friend request:", requestId);
+    console.log(`Removing follow relationship between ${userId} -> ${targetUserId}`);
     
-    const requestRef = doc(db, "friendRequests", requestId);
-    const requestSnap = await getDoc(requestRef);
+    // Query for the follow document
+    const followQuery = query(
+      collection(db, "following"),
+      where("userId", "==", userId),
+      where("followingId", "==", targetUserId)
+    );
     
-    if (!requestSnap.exists()) {
-      throw new Error("Friend request not found");
+    const snapshot = await getDocs(followQuery);
+    
+    // Delete all documents found (should be at most one)
+    const deletePromises: Promise<void>[] = [];
+    
+    snapshot.forEach((docSnapshot) => {
+      console.log(`Deleting follow document: ${docSnapshot.id}`);
+      deletePromises.push(deleteDoc(doc(db, "following", docSnapshot.id)));
+    });
+    
+    if (deletePromises.length === 0) {
+      console.log("No follow documents found to delete");
+      return false;
     }
     
-    const requestData = requestSnap.data() as FriendRequest;
+    await Promise.all(deletePromises);
+    console.log(`Successfully removed follow relationship from ${userId} to ${targetUserId}`);
     
-    await updateDoc(requestRef, { status: 'accepted' });
+    // Verify removal
+    const verifyRemoval = await checkFollowingStatus(userId, targetUserId);
+    if (verifyRemoval) {
+      console.warn("Follow relationship still exists after removal attempt!");
+      return false;
+    }
     
-    await addFriendDirectly(requestData.senderId, requestData.receiverId);
-    
-    console.log("Friend request accepted");
     return true;
   } catch (error) {
-    console.error("Error accepting friend request:", error);
-    throw error;
+    console.error("Error unfollowing user:", error);
+    return false;
   }
 };
 
-export const removeFriendRequest = async (requestId: string) => {
+export const getFollowing = async (userId: string) => {
   try {
-    console.log("Removing friend request:", requestId);
+    console.log("Getting following for user:", userId);
     
-    const requestRef = doc(db, "friendRequests", requestId);
-    await deleteDoc(requestRef);
+    await ensureCollectionExists('following');
     
-    console.log("Friend request removed");
-    return true;
-  } catch (error) {
-    console.error("Error removing friend request:", error);
-    throw error;
-  }
-};
-
-export const getFriendRequests = async (userId: string) => {
-  try {
-    console.log("Getting friend requests for user:", userId);
-    const requestsRef = collection(db, "friendRequests");
+    const followingCol = collection(db, "following");
+    console.log("Using following collection path:", followingCol.path);
     
-    const incomingQuery = query(
-      requestsRef,
-      where("receiverId", "==", userId),
-      where("status", "==", "pending")
-    );
-    
-    const outgoingQuery = query(
-      requestsRef,
-      where("senderId", "==", userId),
-      where("status", "==", "pending")
-    );
-    
-    const [incomingSnapshot, outgoingSnapshot] = await Promise.all([
-      getDocs(incomingQuery),
-      getDocs(outgoingQuery)
-    ]);
-    
-    const incomingRequests: FriendRequest[] = [];
-    const outgoingRequests: FriendRequest[] = [];
-    
-    incomingSnapshot.forEach(doc => {
-      incomingRequests.push({ id: doc.id, ...doc.data() as FriendRequest });
-    });
-    
-    outgoingSnapshot.forEach(doc => {
-      outgoingRequests.push({ id: doc.id, ...doc.data() as FriendRequest });
-    });
-    
-    console.log("Incoming requests:", incomingRequests);
-    console.log("Outgoing requests:", outgoingRequests);
-    
-    return { incomingRequests, outgoingRequests };
-  } catch (error) {
-    console.error("Error getting friend requests:", error);
-    return { incomingRequests: [], outgoingRequests: [] };
-  }
-};
-
-export const getFriends = async (userId: string) => {
-  try {
-    console.log("Getting friends for user:", userId);
-    
-    await ensureCollectionExists('friends');
-    
-    const friendsCol = collection(db, "friends");
-    console.log("Using friends collection path:", friendsCol.path);
-    
-    const friendsQuery = query(
-      friendsCol,
+    const followingQuery = query(
+      followingCol,
       where("userId", "==", userId)
     );
     
-    console.log(`Querying friends collection with userId: ${userId}`);
+    console.log(`Querying following collection with userId: ${userId}`);
     
-    const snapshot = await getDocs(friendsQuery);
-    console.log(`Found ${snapshot.size} friend records for user ${userId}`);
+    const snapshot = await getDocs(followingQuery);
+    console.log(`Found ${snapshot.size} following records for user ${userId}`);
     
-    snapshot.forEach((doc) => {
-      console.log("Friend document found:", doc.id, JSON.stringify(doc.data()));
-    });
-    
-    const friends: FriendData[] = [];
+    const following: FollowingData[] = [];
     
     snapshot.forEach((doc) => {
-      const data = doc.data() as FriendData;
-      friends.push({ 
+      const data = doc.data() as FollowingData;
+      following.push({ 
         id: doc.id, 
         userId: data.userId,
-        friendId: data.friendId,
+        followingId: data.followingId,
         username: data.username || "Unknown",
         photoURL: data.photoURL,
         timestamp: data.timestamp
       });
     });
     
-    console.log("Processed friends list:", JSON.stringify(friends));
-    return friends;
+    console.log("Processed following list:", JSON.stringify(following));
+    return following;
   } catch (error) {
-    console.error("Error getting friends:", error);
+    console.error("Error getting following:", error);
     console.error("Error details:", JSON.stringify(error));
     return [];
   }
 };
 
-/**
- * Removes a friendship between two users by deleting both friendship documents.
- * 
- * @param userId - The current user's ID
- * @param friendId - The friend's ID to remove
- * @returns A boolean indicating if the removal was successful
- */
-export const removeFriend = async (userId: string, friendId: string): Promise<boolean> => {
+export const getFollowers = async (userId: string) => {
   try {
-    console.log(`Removing friendship between ${userId} and ${friendId}`);
+    console.log("Getting followers for user:", userId);
     
-    // Query for both friendship documents
-    const query1 = query(
-      collection(db, "friends"),
-      where("userId", "==", userId),
-      where("friendId", "==", friendId)
+    await ensureCollectionExists('following');
+    
+    const followingCol = collection(db, "following");
+    console.log("Using following collection path:", followingCol.path);
+    
+    const followersQuery = query(
+      followingCol,
+      where("followingId", "==", userId)
     );
     
-    const query2 = query(
-      collection(db, "friends"),
-      where("userId", "==", friendId),
-      where("friendId", "==", userId)
-    );
+    console.log(`Querying following collection for followers of: ${userId}`);
     
-    const [snapshot1, snapshot2] = await Promise.all([
-      getDocs(query1),
-      getDocs(query2)
-    ]);
+    const snapshot = await getDocs(followersQuery);
+    console.log(`Found ${snapshot.size} follower records for user ${userId}`);
     
-    // Delete all documents found (should be at most one per direction)
-    const deletePromises: Promise<void>[] = [];
+    const followers: FollowingData[] = [];
     
-    snapshot1.forEach((docSnapshot) => {
-      console.log(`Deleting friendship document: ${docSnapshot.id} (direction 1)`);
-      deletePromises.push(deleteDoc(doc(db, "friends", docSnapshot.id)));
+    snapshot.forEach((doc) => {
+      const data = doc.data() as FollowingData;
+      followers.push({ 
+        id: doc.id, 
+        userId: data.userId,
+        followingId: data.followingId,
+        username: data.username || "Unknown",
+        photoURL: data.photoURL,
+        timestamp: data.timestamp
+      });
     });
     
-    snapshot2.forEach((docSnapshot) => {
-      console.log(`Deleting friendship document: ${docSnapshot.id} (direction 2)`);
-      deletePromises.push(deleteDoc(doc(db, "friends", docSnapshot.id)));
-    });
-    
-    if (deletePromises.length === 0) {
-      console.log("No friendship documents found to delete");
-      return false;
-    }
-    
-    await Promise.all(deletePromises);
-    console.log(`Successfully removed friendship between ${userId} and ${friendId}`);
-    
-    // Verify removal
-    const verifyRemoval = await checkFriendshipExists(userId, friendId);
-    if (verifyRemoval) {
-      console.warn("Friendship still exists after removal attempt!");
-      return false;
-    }
-    
-    return true;
+    console.log("Processed followers list:", JSON.stringify(followers));
+    return followers;
   } catch (error) {
-    console.error("Error removing friend:", error);
-    return false;
+    console.error("Error getting followers:", error);
+    console.error("Error details:", JSON.stringify(error));
+    return [];
   }
+};
+
+export const checkFriendRequestExists = async (userId: string, targetUserId: string) => {
+  return { sentRequest: null, receivedRequest: null };
+};
+
+export const checkFriendshipExists = async (userId: string, targetUserId: string) => {
+  return await checkFollowingStatus(userId, targetUserId);
+};
+
+export const sendFriendRequest = async (senderId: string, receiverId: string) => {
+  return await followUser(senderId, receiverId);
+};
+
+export const addFriendDirectly = async (userId: string, friendId: string) => {
+  return await followUser(userId, friendId);
+};
+
+export const removeFriend = async (userId: string, friendId: string): Promise<boolean> => {
+  return await unfollowUser(userId, friendId);
+};
+
+export const getFriends = async (userId: string) => {
+  const following = await getFollowing(userId);
+  
+  return following.map(follow => ({
+    id: follow.id,
+    userId: follow.userId,
+    friendId: follow.followingId,
+    username: follow.username,
+    photoURL: follow.photoURL,
+    timestamp: follow.timestamp
+  })) as FriendData[];
+};
+
+export const getFriendRequests = async (userId: string) => {
+  return { incomingRequests: [], outgoingRequests: [] };
+};
+
+export const acceptFriendRequest = async (requestId: string) => {
+  return true;
+};
+
+export const removeFriendRequest = async (requestId: string) => {
+  return true;
 };
