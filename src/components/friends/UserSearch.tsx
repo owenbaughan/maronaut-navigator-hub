@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   searchUsers, 
@@ -35,6 +36,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [noResults, setNoResults] = useState(false);
+  const [isAddingFriend, setIsAddingFriend] = useState(false);
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -151,6 +153,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     if (!currentUser) return;
     
     try {
+      setIsAddingFriend(true);
       console.log("Adding friend, user privacy settings:", user.privacySettings);
       
       // Double-check privacy settings by getting the latest profile data
@@ -164,19 +167,34 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       if (autoAccept) {
         console.log("Auto-accept is enabled, adding friend directly");
         await addFriendDirectly(currentUser.uid, user.id);
-        toast({
-          title: "Friend added",
-          description: `${user.username} is now your friend`,
-        });
         
-        // Update the user's status in search results to 'friend'
-        setSearchResults(prev => 
-          prev.map(result => 
-            result.id === user.id 
-              ? { ...result, status: 'friend' } 
-              : result
-          )
-        );
+        // Verify that the friendship was created successfully
+        const friendshipCreated = await checkFriendshipExists(currentUser.uid, user.id);
+        console.log("Friendship created successfully:", friendshipCreated);
+        
+        if (friendshipCreated) {
+          toast({
+            title: "Friend added",
+            description: `${user.username} is now your friend`,
+          });
+          
+          // Update the user's status in search results to 'friend'
+          setSearchResults(prev => 
+            prev.map(result => 
+              result.id === user.id 
+                ? { ...result, status: 'friend' } 
+                : result
+            )
+          );
+          
+          // Call the callback if provided to refresh the friends list
+          if (onUserAdded) {
+            console.log("Calling onUserAdded callback to refresh friends list");
+            onUserAdded();
+          }
+        } else {
+          throw new Error("Failed to create friendship");
+        }
       } else {
         console.log("Auto-accept is disabled, sending friend request");
         await sendFriendRequest(currentUser.uid, user.id);
@@ -193,11 +211,11 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
               : result
           )
         );
-      }
-      
-      // Call the callback if provided
-      if (onUserAdded) {
-        onUserAdded();
+        
+        // Call the callback if provided
+        if (onUserAdded) {
+          onUserAdded();
+        }
       }
     } catch (error) {
       console.error("Error adding friend:", error);
@@ -206,6 +224,8 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
         description: "There was a problem sending the friend request",
         variant: "destructive"
       });
+    } finally {
+      setIsAddingFriend(false);
     }
   };
 
@@ -279,9 +299,10 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                       size="sm"
                       className="bg-maronaut-500 hover:bg-maronaut-600"
                       onClick={() => handleAddFriend(user)}
+                      disabled={isAddingFriend}
                     >
                       <UserPlus size={16} className="mr-1" />
-                      Add Friend
+                      {isAddingFriend ? 'Adding...' : 'Add Friend'}
                     </Button>
                   )}
                 </div>

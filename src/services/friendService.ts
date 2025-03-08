@@ -1,3 +1,4 @@
+
 import { db } from "../lib/firebase";
 import { 
   collection,
@@ -178,7 +179,13 @@ export const checkFriendshipExists = async (userId: string, targetUserId: string
       getDocs(query2)
     ]);
     
-    return !snapshot1.empty || !snapshot2.empty;
+    const exists = !snapshot1.empty || !snapshot2.empty;
+    console.log(`Friendship exists between ${userId} and ${targetUserId}: ${exists}`);
+    console.log("Friendship check results:", 
+      `Direction 1: ${snapshot1.size} records`, 
+      `Direction 2: ${snapshot2.size} records`);
+    
+    return exists;
   } catch (error) {
     console.error("Error checking friendship:", error);
     return false;
@@ -247,30 +254,38 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     // Create friend entries for both users
     const timestamp = serverTimestamp() as Timestamp;
     
-    // Create friend entries as a batch to ensure both or neither are created
-    const batch = [];
-    
     // Add entry for current user
-    const userFriendRef = await addDoc(collection(db, "friends"), {
+    const userFriendData = {
       userId,
       friendId,
       username: friendProfile.username,
       photoURL: friendProfile.profilePicture || null,
       timestamp
-    });
+    };
+    
+    console.log("Creating friend entry for current user:", userFriendData);
+    const userFriendRef = await addDoc(collection(db, "friends"), userFriendData);
     console.log("Added friend entry for current user:", userFriendRef.id);
     
     // Add entry for the friend
-    const friendUserRef = await addDoc(collection(db, "friends"), {
+    const friendUserData = {
       userId: friendId,
       friendId: userId,
       username: userProfile.username,
       photoURL: userProfile.profilePicture || null,
       timestamp
-    });
+    };
+    
+    console.log("Creating friend entry for friend:", friendUserData);
+    const friendUserRef = await addDoc(collection(db, "friends"), friendUserData);
     console.log("Added friend entry for friend:", friendUserRef.id);
     
     console.log("Friend added directly, both entries created successfully");
+    
+    // Verify friend entries were added
+    const verifyFriendship = await checkFriendshipExists(userId, friendId);
+    console.log("Verification that friendship was created:", verifyFriendship);
+    
     return true;
   } catch (error) {
     console.error("Error adding friend directly:", error);
@@ -381,13 +396,20 @@ export const getFriends = async (userId: string) => {
     );
     
     const snapshot = await getDocs(q);
+    console.log(`Found ${snapshot.size} friend records for user ${userId}`);
+    
+    // Log all retrieved friend documents for debugging
+    snapshot.forEach(doc => {
+      console.log("Friend document:", doc.id, doc.data());
+    });
+    
     const friends: FriendData[] = [];
     
     snapshot.forEach(doc => {
       friends.push({ id: doc.id, ...doc.data() as FriendData });
     });
     
-    console.log("Friends:", friends);
+    console.log("Processed friends list:", friends);
     return friends;
   } catch (error) {
     console.error("Error getting friends:", error);
