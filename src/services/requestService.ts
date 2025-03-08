@@ -8,7 +8,8 @@ import {
   doc,
   getDoc,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  Timestamp
 } from "firebase/firestore";
 import { FollowRequest } from "./types";
 import { getUserProfile } from "./profileService";
@@ -166,24 +167,40 @@ export const acceptFollowRequest = async (requestId: string) => {
     const followingCollection = collection(db, "following");
     const timestamp = requestData.timestamp || serverTimestamp();
     
+    // Important: Make sure the data structure matches our Firebase rules
+    // According to the rules, userId must be the person doing the following
     const followData = {
       userId: senderId, // Who is doing the following (the requester)
       followingId: receiverId, // Who is being followed (the receiver of the request)
-      username: requestData.senderUsername || (senderProfile?.username || "Unknown"),
+      username: senderProfile?.username || requestData.senderUsername || "Unknown",
       photoURL: senderProfile?.profilePicture || null,
       timestamp
     };
     
     console.log("Adding follow relationship:", followData);
-    await addDoc(followingCollection, followData);
+    
+    try {
+      const docRef = await addDoc(followingCollection, followData);
+      console.log("Successfully created follow relationship with ID:", docRef.id);
+    } catch (error) {
+      console.error("Error creating follow relationship:", error);
+      throw new Error("Failed to create follow relationship");
+    }
     
     // Update status in the request collection
-    await updateDoc(requestRef, { status: 'accepted' });
-    console.log("Request updated to accepted");
+    try {
+      await updateDoc(requestRef, { status: 'accepted' });
+      console.log("Request updated to accepted in", requestRef.path);
+    } catch (error) {
+      console.error("Error updating request status:", error);
+      throw new Error("Failed to update request status");
+    }
     
     // Try to find and update matching request in the other collection
     try {
       const otherCollectionName = requestRef.path.includes("followRequests") ? "friendRequests" : "followRequests";
+      console.log("Looking for matching request in", otherCollectionName);
+      
       const otherCollectionQuery = query(
         collection(db, otherCollectionName),
         where("senderId", "==", senderId),
@@ -195,10 +212,13 @@ export const acceptFollowRequest = async (requestId: string) => {
       if (!otherSnapshot.empty) {
         const matchingDoc = otherSnapshot.docs[0];
         await updateDoc(doc(db, otherCollectionName, matchingDoc.id), { status: 'accepted' });
-        console.log(`Updated matching request in ${otherCollectionName}`);
+        console.log(`Updated matching request in ${otherCollectionName} with ID:`, matchingDoc.id);
+      } else {
+        console.log(`No matching request found in ${otherCollectionName}`);
       }
     } catch (error) {
       console.warn("Error updating matching request in other collection:", error);
+      // We don't want to fail the entire operation if this step fails
     }
     
     return true;
