@@ -1,4 +1,3 @@
-
 import { db, friendsCollection, userProfilesCollection, friendRequestsCollection } from "../lib/firebase";
 import { 
   query,
@@ -246,7 +245,7 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
     
     console.log("Found profiles:", userProfile.username, "and", friendProfile.username);
     
-    // Explicitly check that we're using the right collection
+    // CRITICAL: Ensure we're using the correct collection path
     console.log("Using friends collection path:", friendsCollection.path);
     
     const timestamp = serverTimestamp() as Timestamp;
@@ -260,8 +259,12 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
       timestamp
     };
     
-    console.log("Creating first friend entry (user->friend):", userFriendData);
-    const userFriendRef = await addDoc(friendsCollection, userFriendData);
+    // Force creation of the collection if it doesn't exist by explicit doc path
+    console.log("Creating first friend entry with explicit collection path");
+    console.log("Friend data to save:", JSON.stringify(userFriendData));
+    
+    // Use a direct reference to ensure we're writing to the correct collection
+    const userFriendRef = await addDoc(collection(db, "friends"), userFriendData);
     console.log("Created first friend entry with document ID:", userFriendRef.id);
     
     // Second friend entry (friend -> user) for bidirectional relationship
@@ -273,18 +276,34 @@ export const addFriendDirectly = async (userId: string, friendId: string) => {
       timestamp
     };
     
-    console.log("Creating second friend entry (friend->user):", friendUserData);
-    const friendUserRef = await addDoc(friendsCollection, friendUserData);
+    console.log("Creating second friend entry (friend->user):", JSON.stringify(friendUserData));
+    // Again, use direct reference to ensure we're writing to the correct collection
+    const friendUserRef = await addDoc(collection(db, "friends"), friendUserData);
     console.log("Created second friend entry with document ID:", friendUserRef.id);
+    
+    // Add a small delay to allow Firestore to propagate the changes
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Verify the friendship was created
     const verifyFriendship = await checkFriendshipExists(userId, friendId);
     console.log("Verified friendship was created:", verifyFriendship);
     
-    // Additional debug logging to check Firestore state
-    const friendsQuery = query(friendsCollection, where("userId", "==", userId));
-    const snapshot = await getDocs(friendsQuery);
-    console.log(`Found ${snapshot.size} friend entries for user ${userId} after creation`);
+    // Additional debug: direct check in Firestore
+    try {
+      const directQuery = query(
+        collection(db, "friends"),
+        where("userId", "==", userId),
+        where("friendId", "==", friendId)
+      );
+      const directSnapshot = await getDocs(directQuery);
+      console.log(`Direct query found ${directSnapshot.size} documents`);
+      
+      directSnapshot.forEach(doc => {
+        console.log("Found direct document:", JSON.stringify(doc.data()));
+      });
+    } catch (e) {
+      console.error("Direct query failed:", e);
+    }
     
     return verifyFriendship;
   } catch (error) {
@@ -381,16 +400,17 @@ export const getFriends = async (userId: string) => {
     console.log("Getting friends for user:", userId);
     console.log("Friends collection path:", friendsCollection.path);
     
-    // Create query against the friends collection
-    const friendsQuery = query(
-      friendsCollection,
+    // Try direct query on the collection path
+    console.log("Using direct 'friends' collection query");
+    const directQuery = query(
+      collection(db, "friends"),
       where("userId", "==", userId)
     );
     
     console.log(`Querying friends collection with userId: ${userId}`);
     
     // Execute the query
-    const snapshot = await getDocs(friendsQuery);
+    const snapshot = await getDocs(directQuery);
     console.log(`Found ${snapshot.size} friend records for user ${userId}`);
     
     // Debug: print each document found

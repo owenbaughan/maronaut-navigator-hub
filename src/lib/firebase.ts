@@ -31,6 +31,7 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 // Create collection references with proper typing
+// Explicitly define the friends collection
 const friendsCollection = collection(db, "friends");
 const userProfilesCollection = collection(db, "userProfiles");
 const friendRequestsCollection = collection(db, "friendRequests");
