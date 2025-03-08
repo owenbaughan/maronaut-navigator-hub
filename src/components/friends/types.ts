@@ -1,4 +1,6 @@
 
+import { FollowRequest } from '@/services/types';
+
 export interface UserSearchResult {
   id: string;
   username: string;
