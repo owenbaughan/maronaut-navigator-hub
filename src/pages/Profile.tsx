@@ -110,6 +110,7 @@ const Profile = () => {
         privacySettings: {
           isPublicProfile,
           autoAcceptFollows,
+          autoAcceptFriends: autoAcceptFollows,
           showEmail,
           showLocation,
           showBoatDetails

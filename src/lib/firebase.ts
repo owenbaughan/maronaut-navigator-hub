@@ -35,6 +35,8 @@ const storage = getStorage(app);
 const friendsCollection = collection(db, "friends");
 const userProfilesCollection = collection(db, "userProfiles");
 const friendRequestsCollection = collection(db, "friendRequests");
+const followingCollection = collection(db, "following");
+const followRequestsCollection = collection(db, "followRequests");
 
 // Initialize Analytics only in browser environment
 let analytics;
@@ -66,6 +68,8 @@ const initializeCollections = () => {
   ensureCollectionExists('friends');
   ensureCollectionExists('userProfiles');
   ensureCollectionExists('friendRequests');
+  ensureCollectionExists('following');
+  ensureCollectionExists('followRequests');
 };
 
 // Call this once when the app initializes
@@ -85,6 +89,8 @@ export {
   friendsCollection,
   userProfilesCollection,
   friendRequestsCollection,
+  followingCollection,
+  followRequestsCollection,
   collection,
   ensureCollectionExists
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   searchUsers, 
@@ -157,11 +156,17 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       // Get target user's auto-accept setting
       const targetProfile = await getUserProfile(user.id);
       
-      // Check for both settings for backward compatibility
-      const autoAccept = (targetProfile?.privacySettings?.autoAcceptFollows !== false) || 
-                         (targetProfile?.privacySettings?.autoAcceptFriends !== false);
+      // Important: Check BOTH settings for backward compatibility
+      // If either is missing or false, default to true for auto-accept
+      const autoAcceptFollows = targetProfile?.privacySettings?.autoAcceptFollows;
+      const autoAcceptFriends = targetProfile?.privacySettings?.autoAcceptFriends;
+      
+      // If either setting is explicitly set to false, don't auto-accept
+      // Otherwise default to auto-accepting (both undefined or null = auto-accept)
+      const autoAccept = !(autoAcceptFollows === false || autoAcceptFriends === false);
       
       console.log("Auto accept setting:", autoAccept, "from:", targetProfile?.privacySettings);
+      console.log("autoAcceptFollows:", autoAcceptFollows, "autoAcceptFriends:", autoAcceptFriends);
       
       // Follow user
       console.log(`Following user: ${currentUser.uid} -> ${user.id}`);
