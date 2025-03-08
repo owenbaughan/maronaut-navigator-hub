@@ -164,6 +164,13 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         
         if (!profileToSave.privacySettings) {
           profileToSave.privacySettings = existingData.privacySettings || getDefaultPrivacySettings();
+        } else {
+          // Ensure backwards compatibility by copying autoAcceptFollows to autoAcceptFriends
+          if (profileToSave.privacySettings.autoAcceptFollows !== undefined) {
+            profileToSave.privacySettings.autoAcceptFriends = profileToSave.privacySettings.autoAcceptFollows;
+          } else if (profileToSave.privacySettings.autoAcceptFriends !== undefined) {
+            profileToSave.privacySettings.autoAcceptFollows = profileToSave.privacySettings.autoAcceptFriends;
+          }
         }
         
         console.log("Updating profile with privacy settings:", profileToSave.privacySettings);
@@ -209,6 +216,13 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         if (!data.privacySettings) {
           data.privacySettings = getDefaultPrivacySettings();
           console.log("Added default privacy settings to profile:", data.privacySettings);
+        } else {
+          // Ensure both fields are present for backward compatibility
+          if (data.privacySettings.autoAcceptFollows === undefined && data.privacySettings.autoAcceptFriends !== undefined) {
+            data.privacySettings.autoAcceptFollows = data.privacySettings.autoAcceptFriends;
+          } else if (data.privacySettings.autoAcceptFriends === undefined && data.privacySettings.autoAcceptFollows !== undefined) {
+            data.privacySettings.autoAcceptFriends = data.privacySettings.autoAcceptFollows;
+          }
         }
         
         return data;
@@ -219,6 +233,13 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         if (localProfile && !localProfile.privacySettings) {
           localProfile.privacySettings = getDefaultPrivacySettings();
           console.log("Added default privacy settings to local profile:", localProfile.privacySettings);
+        } else if (localProfile && localProfile.privacySettings) {
+          // Ensure both fields are present for backward compatibility
+          if (localProfile.privacySettings.autoAcceptFollows === undefined && localProfile.privacySettings.autoAcceptFriends !== undefined) {
+            localProfile.privacySettings.autoAcceptFollows = localProfile.privacySettings.autoAcceptFriends;
+          } else if (localProfile.privacySettings.autoAcceptFriends === undefined && localProfile.privacySettings.autoAcceptFollows !== undefined) {
+            localProfile.privacySettings.autoAcceptFriends = localProfile.privacySettings.autoAcceptFollows;
+          }
         }
         
         return localProfile;
@@ -234,6 +255,13 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     
     if (localProfile && !localProfile.privacySettings) {
       localProfile.privacySettings = getDefaultPrivacySettings();
+    } else if (localProfile && localProfile.privacySettings) {
+      // Ensure both fields are present for backward compatibility
+      if (localProfile.privacySettings.autoAcceptFollows === undefined && localProfile.privacySettings.autoAcceptFriends !== undefined) {
+        localProfile.privacySettings.autoAcceptFollows = localProfile.privacySettings.autoAcceptFriends;
+      } else if (localProfile.privacySettings.autoAcceptFriends === undefined && localProfile.privacySettings.autoAcceptFollows !== undefined) {
+        localProfile.privacySettings.autoAcceptFriends = localProfile.privacySettings.autoAcceptFollows;
+      }
     }
     
     return localProfile;
