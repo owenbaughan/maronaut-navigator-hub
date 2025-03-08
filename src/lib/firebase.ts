@@ -1,6 +1,6 @@
 
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { 
@@ -30,6 +30,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
+// Create collection references for common collections
+const friendsCollection = collection(db, "friends");
+const userProfilesCollection = collection(db, "userProfiles");
+const friendRequestsCollection = collection(db, "friendRequests");
+
 // Initialize Analytics only in browser environment
 let analytics;
 try {
@@ -50,7 +55,10 @@ export {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  friendsCollection,
+  userProfilesCollection,
+  friendRequestsCollection
 };
 
 export type { User };
