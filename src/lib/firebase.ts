@@ -32,9 +32,7 @@ const storage = getStorage(app);
 
 // Create collection references with proper typing
 // Explicitly define collections
-const friendsCollection = collection(db, "friends");
 const userProfilesCollection = collection(db, "userProfiles");
-const friendRequestsCollection = collection(db, "friendRequests");
 const followingCollection = collection(db, "following");
 const followRequestsCollection = collection(db, "followRequests");
 
@@ -65,9 +63,7 @@ const ensureCollectionExists = async (collectionPath: string) => {
 
 // Ensure critical collections exist
 const initializeCollections = () => {
-  ensureCollectionExists('friends');
   ensureCollectionExists('userProfiles');
-  ensureCollectionExists('friendRequests');
   ensureCollectionExists('following');
   ensureCollectionExists('followRequests');
 };
@@ -86,9 +82,7 @@ export {
   signOut,
   onAuthStateChanged,
   updateProfile,
-  friendsCollection,
   userProfilesCollection,
-  friendRequestsCollection,
   followingCollection,
   followRequestsCollection,
   collection,

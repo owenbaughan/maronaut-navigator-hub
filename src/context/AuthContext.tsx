@@ -38,8 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("User logged in, ensuring collections exist");
         await Promise.all([
           ensureCollectionExists('userProfiles'),
-          ensureCollectionExists('friends'),
-          ensureCollectionExists('friendRequests')
+          ensureCollectionExists('following'),
+          ensureCollectionExists('followRequests')
         ]);
       }
       
