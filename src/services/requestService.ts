@@ -154,30 +154,36 @@ export const acceptFollowRequest = async (requestId: string) => {
     
     const requestData = requestDoc.data();
     console.log("Request data:", requestData);
-    const { senderId, receiverId } = requestData;
+    const { senderId, receiverId, senderUsername } = requestData;
     
     // Ensure collection exists
     await ensureCollectionExists('following');
     
     // Get sender profile to get username
-    const senderProfile = await getUserProfile(senderId);
-    console.log("Sender profile:", senderProfile);
+    let senderProfile = null;
+    try {
+      senderProfile = await getUserProfile(senderId);
+      console.log("Sender profile:", senderProfile);
+    } catch (error) {
+      console.warn("Could not get sender profile:", error);
+      // Continue with the existing data from the request
+    }
     
     // Create follow relationship in the following collection
+    console.log("Creating follow relationship document in following collection");
     const followingCollection = collection(db, "following");
-    const timestamp = requestData.timestamp || serverTimestamp();
     
     // Important: Make sure the data structure matches our Firebase rules
     // According to the rules, userId must be the person doing the following
     const followData = {
-      userId: senderId, // Who is doing the following (the requester)
+      userId: senderId, // Who is doing the following (the sender/requester)
       followingId: receiverId, // Who is being followed (the receiver of the request)
-      username: senderProfile?.username || requestData.senderUsername || "Unknown",
+      username: senderProfile?.username || senderUsername || "Unknown",
       photoURL: senderProfile?.profilePicture || null,
-      timestamp
+      timestamp: serverTimestamp()
     };
     
-    console.log("Adding follow relationship:", followData);
+    console.log("Adding follow relationship with data:", followData);
     
     try {
       const docRef = await addDoc(followingCollection, followData);

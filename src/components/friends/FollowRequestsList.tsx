@@ -26,13 +26,7 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
     setProcessingRequestIds(prev => [...prev, requestId]);
     try {
       console.log("Accepting follow request with ID:", requestId);
-      // Find the request data in our local state to pass to the accept function
-      const request = requests.find(req => req.id === requestId);
-      if (!request) {
-        throw new Error("Request not found in local state");
-      }
       
-      console.log("Found request in local state:", request);
       const success = await acceptFollowRequest(requestId);
       
       if (success) {
