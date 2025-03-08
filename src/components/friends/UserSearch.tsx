@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   searchUsers, 
@@ -229,6 +230,19 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     }
   };
 
+  // Helper function to determine button text based on user's privacy settings and status
+  const getFollowButtonText = (user: UserSearchResult) => {
+    if (isFollowingUser && processingUserId === user.id) {
+      return "Processing...";
+    }
+    
+    // If either setting is explicitly set to false, request to follow
+    const requiresRequest = user.privacySettings?.autoAcceptFollows === false || 
+                           user.privacySettings?.autoAcceptFriends === false;
+                           
+    return requiresRequest ? "Request Follow" : "Follow";
+  };
+
   return (
     <>
       <form onSubmit={handleSearch} className="relative">
@@ -278,7 +292,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                     </div>
                   </div>
                   
-                  {/* Following status buttons */}
+                  {/* Updated Following status buttons */}
                   {user.status === 'following' ? (
                     <div className="flex items-center text-green-600">
                       <UserCheck size={18} className="mr-1" />
@@ -297,7 +311,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
                       disabled={isFollowingUser && processingUserId === user.id}
                     >
                       <UserPlus size={16} className="mr-1" />
-                      {isFollowingUser && processingUserId === user.id ? 'Following...' : 'Follow'}
+                      {getFollowButtonText(user)}
                     </Button>
                   )}
                 </div>
