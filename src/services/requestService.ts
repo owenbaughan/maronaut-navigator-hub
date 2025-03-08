@@ -7,9 +7,11 @@ import {
   updateDoc,
   doc,
   getDoc,
-  addDoc
+  addDoc,
+  serverTimestamp
 } from "firebase/firestore";
 import { FollowRequest } from "./types";
+import { getUserProfile } from "./profileService";
 
 export const getFollowRequests = async (userId: string) => {
   try {
@@ -150,27 +152,34 @@ export const acceptFollowRequest = async (requestId: string) => {
     }
     
     const requestData = requestDoc.data();
+    console.log("Request data:", requestData);
     const { senderId, receiverId } = requestData;
     
+    // Ensure collection exists
     await ensureCollectionExists('following');
     
-    const followingCollection = collection(db, "following");
-    const timestamp = requestData.timestamp;
-    
+    // Get sender profile to get username
     const senderProfile = await getUserProfile(senderId);
+    console.log("Sender profile:", senderProfile);
+    
+    // Create follow relationship in the following collection
+    const followingCollection = collection(db, "following");
+    const timestamp = requestData.timestamp || serverTimestamp();
     
     const followData = {
-      userId: senderId,
-      followingId: receiverId,
+      userId: senderId, // Who is doing the following (the requester)
+      followingId: receiverId, // Who is being followed (the receiver of the request)
       username: requestData.senderUsername || (senderProfile?.username || "Unknown"),
       photoURL: senderProfile?.profilePicture || null,
       timestamp
     };
     
+    console.log("Adding follow relationship:", followData);
     await addDoc(followingCollection, followData);
     
-    // Update status in both collections for backward compatibility
+    // Update status in the request collection
     await updateDoc(requestRef, { status: 'accepted' });
+    console.log("Request updated to accepted");
     
     // Try to find and update matching request in the other collection
     try {
@@ -250,6 +259,3 @@ export const rejectFollowRequest = async (requestId: string) => {
     return false;
   }
 };
-
-// Import needed for the acceptFollowRequest function
-import { getUserProfile } from "./profileService";

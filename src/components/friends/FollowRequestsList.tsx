@@ -25,7 +25,9 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
   const handleAcceptRequest = async (requestId: string) => {
     setProcessingRequestIds(prev => [...prev, requestId]);
     try {
+      console.log("Accepting follow request with ID:", requestId);
       const success = await acceptFollowRequest(requestId);
+      
       if (success) {
         toast({
           title: "Request accepted",
