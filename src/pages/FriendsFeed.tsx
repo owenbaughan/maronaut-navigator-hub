@@ -123,7 +123,7 @@ const FriendsFeed = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
               <h1 className="text-3xl font-bold text-maronaut-700 mb-6 animate-fade-in">
-                Trip Feed
+                Social Feed
               </h1>
               
               <div className="glass-panel p-6 animate-fade-in mb-8">

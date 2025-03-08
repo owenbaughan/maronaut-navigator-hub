@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Hero from '../components/home/Hero';
@@ -27,7 +26,7 @@ const FriendsFeedPreview = () => {
             </div>
             <Link to="/friends" className="btn-primary mt-4 md:mt-0 flex items-center animate-fade-in animate-delay-2">
               <Users size={18} className="mr-2" />
-              Explore Friends Feed
+              Explore Social Feed
             </Link>
           </div>
           
@@ -44,7 +43,7 @@ const FriendsFeedPreview = () => {
                   <p className="text-maronaut-600 mb-4">See what your friends are up to, comment on their trips, and get inspired for your next adventure.</p>
                   <Link to="/friends" className="btn-primary inline-flex items-center">
                     <Users size={18} className="mr-2" />
-                    View Friend Feed
+                    View Social Feed
                   </Link>
                 </div>
               </div>

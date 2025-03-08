@@ -100,7 +100,7 @@ const Header = () => {
             <>
               <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
               <NavLink to="/trips" className="nav-link">Trip Planning</NavLink>
-              <NavLink to="/friends" className="nav-link">Friends Feed</NavLink>
+              <NavLink to="/friends" className="nav-link">Social Feed</NavLink>
               <NavLink to="/reviews" className="nav-link">Reviews</NavLink>
               <NavLink to="/marketplace" className="nav-link">Marketplace</NavLink>
               
@@ -185,7 +185,7 @@ const Header = () => {
                   className="block py-2 px-4 text-maronaut-600 hover:bg-maronaut-50 rounded-lg"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Friends Feed
+                  Social Feed
                 </NavLink>
                 <NavLink 
                   to="/reviews" 
