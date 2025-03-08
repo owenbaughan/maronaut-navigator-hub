@@ -15,9 +15,12 @@ import {
   FollowingData, 
   getFollowing, 
   getFollowers,
-  unfollowUser
+  unfollowUser,
+  getFollowRequests,
+  FollowRequest
 } from '@/services/friendService';
 import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
+import FollowRequestsList from '@/components/friends/FollowRequestsList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +39,7 @@ const FriendsFeed = () => {
   
   const [following, setFollowing] = useState<FollowingData[]>([]);
   const [followers, setFollowers] = useState<FollowingData[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<FollowRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [unfollowingUserId, setUnfollowingUserId] = useState<string | null>(null);
   
@@ -56,6 +60,11 @@ const FriendsFeed = () => {
     setIsLoading(true);
     try {
       console.log("Fetching follow data for user:", currentUser.uid);
+      
+      // Get follow requests
+      const requests = await getFollowRequests(currentUser.uid);
+      console.log("Fetched follow requests:", requests);
+      setIncomingRequests(requests.incomingRequests);
       
       const followingList = await getFollowing(currentUser.uid);
       console.log("Fetched following:", followingList.length);
@@ -134,7 +143,14 @@ const FriendsFeed = () => {
                 <TabsList className="grid grid-cols-3 w-full mb-6">
                   <TabsTrigger value="trips">Trips</TabsTrigger>
                   <TabsTrigger value="following">Following</TabsTrigger>
-                  <TabsTrigger value="followers">Followers</TabsTrigger>
+                  <TabsTrigger value="followers">
+                    Followers
+                    {incomingRequests.length > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {incomingRequests.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="trips">
@@ -233,32 +249,41 @@ const FriendsFeed = () => {
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-maronaut-700 mx-auto"></div>
                           <p className="mt-4 text-maronaut-600">Loading followers...</p>
                         </div>
-                      ) : followers.length === 0 ? (
-                        <div className="text-center p-6 text-maronaut-500">
-                          You don't have any followers yet.
-                        </div>
                       ) : (
-                        <div className="space-y-4">
-                          {followers.map(user => (
-                            <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-                                  {user.username?.charAt(0).toUpperCase() || '?'}
-                                </div>
-                                <div>
-                                  <p className="font-medium">{user.username}</p>
-                                </div>
-                              </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleViewUserProfile(user.userId)}
-                              >
-                                View Profile
-                              </Button>
+                        <>
+                          <FollowRequestsList 
+                            requests={incomingRequests} 
+                            onRequestAction={fetchFollowData} 
+                          />
+                          
+                          {followers.length === 0 && incomingRequests.length === 0 ? (
+                            <div className="text-center p-6 text-maronaut-500">
+                              You don't have any followers yet.
                             </div>
-                          ))}
-                        </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {followers.map(user => (
+                                <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
+                                      {user.username?.charAt(0).toUpperCase() || '?'}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{user.username}</p>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleViewUserProfile(user.userId)}
+                                  >
+                                    View Profile
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
                     </CardContent>
                   </Card>

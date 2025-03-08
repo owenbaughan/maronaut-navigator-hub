@@ -14,3 +14,8 @@ export interface UserSearchResult {
 export interface UserSearchProps {
   onUserAdded?: () => void;
 }
+
+export interface FollowRequestsListProps {
+  requests: FollowRequest[];
+  onRequestAction: () => void;
+}
