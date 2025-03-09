@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FollowRequest } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { UserCheck, UserX, Clock } from 'lucide-react';
-import { acceptFollowRequest, rejectFollowRequest } from '@/services/friendService';
+import { acceptFollowRequest, rejectFollowRequest } from '@/services/requestService';
 import { useToast } from '@/components/ui/use-toast';
 
 interface FollowRequestsListProps {

@@ -96,8 +96,17 @@ export const acceptFollowRequest = async (requestId: string) => {
     
     const { senderId, receiverId, senderUsername } = requestData;
     
-    // Ensure following collection exists
-    await ensureCollectionExists('following');
+    // Update the request status first (mark as accepted)
+    try {
+      await updateDoc(requestRef, { 
+        status: 'accepted',
+        updatedAt: Timestamp.fromDate(new Date())
+      });
+      console.log("Request updated to accepted");
+    } catch (updateError) {
+      console.error("Error updating request status:", updateError);
+      return false;
+    }
     
     // Get sender profile to get username and photo
     let senderProfile = null;
@@ -108,20 +117,10 @@ export const acceptFollowRequest = async (requestId: string) => {
       console.warn("Could not get sender profile, using data from request:", error);
     }
     
-    // Update the request status first (mark as accepted)
-    try {
-      await updateDoc(requestRef, { 
-        status: 'accepted',
-        updatedAt: new Date()
-      });
-      console.log("Request updated to accepted");
-    } catch (updateError) {
-      console.error("Error updating request status:", updateError);
-      return false;
-    }
-    
     // Create follow relationship in the following collection
     try {
+      // Ensure following collection exists
+      await ensureCollectionExists('following');
       console.log("Creating follow relationship document in following collection");
       
       const followData = {
@@ -129,14 +128,13 @@ export const acceptFollowRequest = async (requestId: string) => {
         followingId: receiverId, // Who is being followed
         username: senderProfile?.username || senderUsername || "Unknown",
         photoURL: senderProfile?.profilePicture || null,
-        timestamp: new Date()
+        timestamp: Timestamp.fromDate(new Date())
       };
       
       console.log("Adding follow relationship with data:", JSON.stringify(followData));
       
-      // Make sure we're using the right collection
-      const followingCollectionRef = collection(db, "following");
-      await addDoc(followingCollectionRef, followData);
+      // Make sure we're using the right collection reference
+      await addDoc(collection(db, "following"), followData);
       
       console.log("Successfully created follow relationship");
       return true;
@@ -164,7 +162,10 @@ export const rejectFollowRequest = async (requestId: string) => {
       return false;
     }
     
-    await updateDoc(requestRef, { status: 'declined' });
+    await updateDoc(requestRef, { 
+      status: 'declined',
+      updatedAt: Timestamp.fromDate(new Date())
+    });
     console.log("Request updated to declined");
     
     return true;
