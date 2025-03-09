@@ -1,5 +1,5 @@
 
-import { db, ensureCollectionExists, collection } from "../lib/firebase";
+import { db, collection, ensureCollectionExists } from "../lib/firebase";
 import { 
   query,
   where,
@@ -100,7 +100,7 @@ export const acceptFollowRequest = async (requestId: string) => {
     try {
       await updateDoc(requestRef, { 
         status: 'accepted',
-        updatedAt: Timestamp.fromDate(new Date())
+        updatedAt: Timestamp.now()
       });
       console.log("Request updated to accepted");
     } catch (updateError) {
@@ -123,18 +123,20 @@ export const acceptFollowRequest = async (requestId: string) => {
       await ensureCollectionExists('following');
       console.log("Creating follow relationship document in following collection");
       
+      const followingCollectionRef = collection(db, "following");
+      
       const followData = {
         userId: senderId, // Who is doing the following
         followingId: receiverId, // Who is being followed
         username: senderProfile?.username || senderUsername || "Unknown",
         photoURL: senderProfile?.profilePicture || null,
-        timestamp: Timestamp.fromDate(new Date())
+        timestamp: Timestamp.now()
       };
       
       console.log("Adding follow relationship with data:", JSON.stringify(followData));
       
-      // Make sure we're using the right collection reference
-      await addDoc(collection(db, "following"), followData);
+      // Add the document to the following collection
+      await addDoc(followingCollectionRef, followData);
       
       console.log("Successfully created follow relationship");
       return true;
@@ -164,7 +166,7 @@ export const rejectFollowRequest = async (requestId: string) => {
     
     await updateDoc(requestRef, { 
       status: 'declined',
-      updatedAt: Timestamp.fromDate(new Date())
+      updatedAt: Timestamp.now()
     });
     console.log("Request updated to declined");
     

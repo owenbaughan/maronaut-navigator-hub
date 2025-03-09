@@ -21,11 +21,12 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
   }
 
   const handleAcceptRequest = async (requestId: string) => {
-    setProcessingRequestIds(prev => [...prev, requestId]);
     try {
+      setProcessingRequestIds(prev => [...prev, requestId]);
       console.log("Accepting follow request with ID:", requestId);
       
       const success = await acceptFollowRequest(requestId);
+      console.log("Accept follow request result:", success);
       
       if (success) {
         onRequestAction();
@@ -38,8 +39,9 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
   };
 
   const handleRejectRequest = async (requestId: string) => {
-    setProcessingRequestIds(prev => [...prev, requestId]);
     try {
+      setProcessingRequestIds(prev => [...prev, requestId]);
+      
       const success = await rejectFollowRequest(requestId);
       if (success) {
         onRequestAction();
@@ -80,7 +82,7 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
               Accept
             </Button>
             <Button
-              variant="outline"
+              variant="outline" 
               size="sm"
               className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
               onClick={() => handleRejectRequest(request.id)}
