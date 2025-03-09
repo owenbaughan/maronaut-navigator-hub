@@ -134,9 +134,11 @@ export const acceptFollowRequest = async (requestId: string) => {
       
       console.log("Adding follow relationship with data:", JSON.stringify(followData));
       
+      // Make sure we're using the right collection
       const followingCollectionRef = collection(db, "following");
-      const docRef = await addDoc(followingCollectionRef, followData);
-      console.log("Successfully created follow relationship with ID:", docRef.id);
+      await addDoc(followingCollectionRef, followData);
+      
+      console.log("Successfully created follow relationship");
       return true;
     } catch (addError) {
       console.error("Error creating follow relationship:", addError);

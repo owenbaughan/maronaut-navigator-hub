@@ -98,12 +98,9 @@ export const followUser = async (userId: string, targetUserId: string) => {
       
       return verifyFollowing;
     } else {
-      // Ensure both collections exist for backward compatibility
-      await Promise.all([
-        ensureCollectionExists('followRequests'),
-        ensureCollectionExists('friendRequests')
-      ]);
-      console.log("Ensured followRequests collections exist");
+      // Create just a follow request, no more friendRequests collection
+      await ensureCollectionExists('followRequests');
+      console.log("Ensured followRequests collection exists");
       
       const followRequestsCollection = collection(db, "followRequests");
       
@@ -121,15 +118,6 @@ export const followUser = async (userId: string, targetUserId: string) => {
       console.log("Creating follow request:", JSON.stringify(requestData));
       const requestRef = await addDoc(followRequestsCollection, requestData);
       console.log("Created follow request with document ID:", requestRef.id);
-      
-      // Also add to friendRequests for backward compatibility
-      try {
-        const friendRequestsCol = collection(db, "friendRequests");
-        await addDoc(friendRequestsCol, requestData);
-        console.log("Created duplicate friend request for backward compatibility");
-      } catch (error) {
-        console.warn("Could not create backward compatible friend request:", error);
-      }
       
       return true;
     }
