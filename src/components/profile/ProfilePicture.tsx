@@ -5,7 +5,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
 import { uploadProfilePicture } from '@/services/profileService';
-import { toast } from '@/components/ui/use-toast';
 import { updateProfile } from '@/lib/firebase';
 
 interface ProfilePictureProps {
@@ -58,21 +57,13 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
       setIsUploading(true);
       
       if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file.",
-          variant: "destructive"
-        });
+        console.error("Invalid file type");
         setIsUploading(false);
         return;
       }
       
       if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image smaller than 5MB.",
-          variant: "destructive"
-        });
+        console.error("File too large");
         setIsUploading(false);
         return;
       }
@@ -101,18 +92,8 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         if (onPictureUpdated) {
           onPictureUpdated(downloadURL);
         }
-        
-        toast({
-          title: "Profile picture updated",
-          description: "Your profile picture has been successfully updated."
-        });
       } catch (error) {
         console.error("Error in Firebase upload:", error);
-        toast({
-          title: "Upload failed",
-          description: "Failed to upload profile picture. Please try again.",
-          variant: "destructive"
-        });
         
         // Revert to previous image if upload fails
         URL.revokeObjectURL(objectUrl);
@@ -120,11 +101,6 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
       }
     } catch (error) {
       console.error("Error in file handling:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to process the image. Please try again.",
-        variant: "destructive"
-      });
       setImageUrl(url);
     } finally {
       setIsUploading(false);

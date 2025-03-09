@@ -11,7 +11,6 @@ import {
   ensureCollectionExists
 } from '@/lib/firebase';
 import { createInitialProfile } from '@/services/profileService';
-import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -27,7 +26,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -62,19 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Create initial profile with username
       await createInitialProfile(user.uid, email, trimmedUsername);
-      
-      toast({
-        title: "Account created",
-        description: "Welcome to Maronaut! You're now signed in.",
-      });
-      
     } catch (error: any) {
       console.error("Error creating account:", error);
-      toast({
-        title: "Sign up failed",
-        description: error.message || "There was a problem creating your account.",
-        variant: "destructive",
-      });
       throw error;
     }
   };
@@ -82,17 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Welcome back",
-        description: "You've successfully signed in.",
-      });
     } catch (error: any) {
       console.error("Error signing in:", error);
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid email or password.",
-        variant: "destructive",
-      });
       throw error;
     }
   };
@@ -100,17 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await signOut(auth);
-      toast({
-        title: "Signed out",
-        description: "You've been successfully signed out.",
-      });
     } catch (error: any) {
       console.error("Error signing out:", error);
-      toast({
-        title: "Sign out failed",
-        description: error.message || "There was a problem signing you out.",
-        variant: "destructive",
-      });
       throw error;
     }
   };

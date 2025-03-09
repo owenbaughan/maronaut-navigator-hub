@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   DollarSign, 
@@ -8,7 +7,6 @@ import {
   X,
   Trash2
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 type CategoryType = 'Service' | 'For Sale' | 'Crew' | 'Rentals';
 
@@ -18,7 +16,6 @@ const AddListingForm = ({ onClose, onAddListing }: {
   onClose: () => void;
   onAddListing: (newListing: any) => void;
 }) => {
-  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<CategoryType>('Service');
   const [price, setPrice] = useState('');
@@ -80,10 +77,6 @@ const AddListingForm = ({ onClose, onAddListing }: {
     };
     
     onAddListing(newListing);
-    toast({
-      title: "Success!",
-      description: "Your listing has been added to the marketplace.",
-    });
     onClose();
   };
 

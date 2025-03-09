@@ -4,7 +4,6 @@ import { FollowRequest } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { UserCheck, UserX, Clock } from 'lucide-react';
 import { acceptFollowRequest, rejectFollowRequest } from '@/services/requestService';
-import { useToast } from '@/components/ui/use-toast';
 
 interface FollowRequestsListProps {
   requests: FollowRequest[];
@@ -15,7 +14,6 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
   requests, 
   onRequestAction 
 }) => {
-  const { toast } = useToast();
   const [processingRequestIds, setProcessingRequestIds] = useState<string[]>([]);
 
   if (requests.length === 0) {
@@ -30,25 +28,10 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
       const success = await acceptFollowRequest(requestId);
       
       if (success) {
-        toast({
-          title: "Request accepted",
-          description: "You are now being followed by this user"
-        });
         onRequestAction();
-      } else {
-        toast({
-          title: "Error accepting request",
-          description: "There was a problem accepting this follow request",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error accepting follow request:", error);
-      toast({
-        title: "Error accepting request",
-        description: "There was a problem accepting this follow request",
-        variant: "destructive"
-      });
     } finally {
       setProcessingRequestIds(prev => prev.filter(id => id !== requestId));
     }
@@ -59,25 +42,10 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
     try {
       const success = await rejectFollowRequest(requestId);
       if (success) {
-        toast({
-          title: "Request rejected",
-          description: "The follow request has been rejected"
-        });
         onRequestAction();
-      } else {
-        toast({
-          title: "Error rejecting request",
-          description: "There was a problem rejecting this follow request",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error rejecting follow request:", error);
-      toast({
-        title: "Error rejecting request",
-        description: "There was a problem rejecting this follow request",
-        variant: "destructive"
-      });
     } finally {
       setProcessingRequestIds(prev => prev.filter(id => id !== requestId));
     }

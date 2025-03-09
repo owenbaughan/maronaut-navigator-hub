@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
 import { Heart, MessageCircle, Clock, ArrowRight, Plus, MapPin, Ship, Calendar, Upload } from 'lucide-react';
 import { formatDistance } from 'date-fns';
-import { toast } from '../../components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,11 +128,6 @@ const TripTimeline = () => {
       ...newComments,
       [tripId]: ''
     });
-    
-    toast({
-      title: "Comment added",
-      description: "Your comment has been posted",
-    });
   };
 
   const handleInputChange = (e) => {
@@ -154,11 +147,6 @@ const TripTimeline = () => {
   const handleSubmit = () => {
     // Validate required fields
     if (!newTrip.title || !newTrip.location || !newTrip.date) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
       return;
     }
 
@@ -206,11 +194,6 @@ const TripTimeline = () => {
     setSelectedImage(null);
     setPreviewUrl(null);
     setIsFormOpen(false);
-    
-    toast({
-      title: "Trip added successfully",
-      description: "Your offline trip has been posted to your timeline",
-    });
   };
   
   return (

@@ -5,7 +5,6 @@ import {
   checkFollowingStatus, 
   getFollowRequests,
 } from '@/services/friendService';
-import { useToast } from '@/components/ui/use-toast';
 import { getUserProfile } from '@/services/profileService';
 import { UserSearchResult } from '@/components/friends/types';
 
@@ -17,17 +16,11 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
   const [noResults, setNoResults] = useState(false);
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentUserId) {
-      toast({
-        title: "Not signed in",
-        description: "You need to be signed in to search for users",
-        variant: "destructive"
-      });
       return;
     }
     
@@ -46,11 +39,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
       if (users.length === 0) {
         setNoResults(true);
         setSearchResults([]);
-        toast({
-          title: "No users found",
-          description: `No sailors matching '${searchQuery}' were found.`,
-          variant: "default"
-        });
         return;
       }
       
@@ -91,21 +79,11 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
       
       if (usersWithStatus.length === 0) {
         console.log("No users with status found");
-        toast({
-          title: "No users found",
-          description: `No sailors matching '${searchQuery}' were found.`,
-          variant: "default"
-        });
       } else {
         console.log("✅ Found users:", usersWithStatus.length);
       }
     } catch (error) {
       console.error("❌ Search error:", error);
-      toast({
-        title: "Search failed",
-        description: "There was a problem searching for users",
-        variant: "destructive"
-      });
       setNoResults(true);
       setSearchResults([]);
     } finally {
@@ -118,10 +96,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
     
     // Prevent follow action if this user already has a pending request
     if (user.status === 'requested') {
-      toast({
-        title: "Request pending",
-        description: `You already have a pending follow request for ${user.username}`,
-      });
       return;
     }
     
@@ -135,10 +109,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
       const alreadyFollowing = await checkFollowingStatus(currentUserId, user.id);
       if (alreadyFollowing) {
         console.log("Already following this user, updating UI only");
-        toast({
-          title: "Already following",
-          description: `You are already following ${user.username}`,
-        });
         
         // Update the user's status in search results to 'following'
         setSearchResults(prev => 
@@ -178,11 +148,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
       
       if (success) {
         if (autoAccept) {
-          toast({
-            title: "Now following",
-            description: `You are now following ${user.username}`,
-          });
-          
           // Update the user's status in search results to 'following'
           setSearchResults(prev => 
             prev.map(result => 
@@ -192,11 +157,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
             )
           );
         } else {
-          toast({
-            title: "Follow request sent",
-            description: `A follow request has been sent to ${user.username}`,
-          });
-          
           // Update the user's status in search results to 'requested'
           setSearchResults(prev => 
             prev.map(result => 
@@ -212,20 +172,9 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
           console.log("Calling onUserAdded callback to refresh following list");
           onUserAdded();
         }
-      } else {
-        toast({
-          title: "Failed to follow",
-          description: "There was a problem following this user",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error following user:", error);
-      toast({
-        title: "Failed to follow",
-        description: "There was a problem following this user",
-        variant: "destructive"
-      });
     } finally {
       setIsFollowingUser(false);
       setProcessingUserId(null);
