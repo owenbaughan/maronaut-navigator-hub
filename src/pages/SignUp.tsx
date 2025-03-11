@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -38,10 +37,12 @@ const SignUp = () => {
           console.log("SignUp: Username check result:", isAvailable);
           setIsUsernameTaken(!isAvailable);
           setUsernameChecked(true);
-        } catch (error) {
+          if (error.includes("username")) {
+            setError('');
+          }
+        } catch (error: any) {
           console.error("SignUp: Error checking username:", error);
-          // Don't automatically set as taken, show the error instead
-          setError("Error checking username availability. Please try again.");
+          setError(error.message || "Error checking username availability");
           setUsernameChecked(false);
         } finally {
           setIsCheckingUsername(false);
@@ -53,12 +54,15 @@ const SignUp = () => {
       setUsernameChecked(false);
       setIsUsernameTaken(false);
     }
-  }, [username, checkUsernameAvailability]);
+  }, [username, checkUsernameAvailability, error]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
     setUsernameChecked(false);
+    if (error.includes("username")) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,18 +79,24 @@ const SignUp = () => {
       return;
     }
     
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
     try {
-      console.log("SignUp: Final username check before submission:", username.trim().toLowerCase());
-      const finalCheck = await checkUsernameAvailability(username.trim().toLowerCase());
-      console.log("SignUp: Final username check result:", finalCheck);
+      setIsLoading(true);
       
-      if (!finalCheck) {
+      console.log("SignUp: Final username check before submission:", username.trim().toLowerCase());
+      const isAvailable = await checkUsernameAvailability(username.trim().toLowerCase());
+      console.log("SignUp: Final username check result:", isAvailable);
+      
+      if (!isAvailable) {
         setError('This username is already taken');
         setIsUsernameTaken(true);
+        setIsLoading(false);
         return;
       }
-      
-      setIsLoading(true);
       
       await signUp(username.trim().toLowerCase(), email, password);
       toast({
@@ -96,11 +106,7 @@ const SignUp = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error("SignUp: Error during signup:", err);
-      if (err.message === "Username is already taken") {
-        setError("This username is already taken. Please choose another one.");
-      } else {
-        setError(err.message || 'Failed to create account');
-      }
+      setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
     }

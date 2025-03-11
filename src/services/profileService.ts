@@ -59,13 +59,20 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
   try {
     console.log("profileService: Checking username availability for:", username);
-    const isTaken = await isUsernameTaken(username.trim().toLowerCase());
+    const trimmedUsername = username.trim().toLowerCase();
+    
+    if (trimmedUsername.length < 3) {
+      console.log("profileService: Username too short, returning false");
+      return false;
+    }
+    
+    const isTaken = await isUsernameTaken(trimmedUsername);
     const isAvailable = !isTaken;
-    console.log(`profileService: Username "${username}" is ${isAvailable ? 'available' : 'taken'}`);
+    console.log(`profileService: Username "${trimmedUsername}" is ${isAvailable ? 'available' : 'taken'}`);
     return isAvailable;
   } catch (error) {
     console.error("profileService: Error checking username availability:", error);
-    throw error;
+    throw new Error("Failed to check username availability. Please try again.");
   }
 };
 

@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -61,9 +62,9 @@ const ensureCollectionExists = async (collectionPath: string) => {
 };
 
 // Check if a username is already taken
-// This function needs to work for both authenticated and unauthenticated users
 const isUsernameTaken = async (username: string): Promise<boolean> => {
   try {
+    // Validation
     if (!username || username.trim().length < 3) {
       console.log("Username too short or empty, considering as taken");
       return true; // Consider short/empty usernames as "taken" to avoid unnecessary queries
@@ -72,32 +73,30 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     const trimmedUsername = username.trim().toLowerCase();
     console.log(`Checking if username already exists: ${trimmedUsername}`);
     
-    // Create a query with proper where condition and limit
+    // Create a query against the userProfiles collection
     const q = query(
       userProfilesCollection, 
       where("username", "==", trimmedUsername),
       limit(1)
     );
     
+    // Execute the query
     console.log("Executing username availability query");
     const querySnapshot = await getDocs(q);
     
-    // Enhanced debugging
-    console.log(`Username check query returned ${querySnapshot.size} documents for "${trimmedUsername}"`);
+    // Log detailed results
+    console.log(`Username check query returned ${querySnapshot.size} documents`);
+    querySnapshot.forEach(doc => {
+      console.log(`Found match: Document ID: ${doc.id}, Data:`, doc.data());
+    });
     
-    if (querySnapshot.size > 0) {
-      console.log(`Username "${trimmedUsername}" is taken. Found ${querySnapshot.size} matching document(s):`);
-      querySnapshot.forEach(doc => {
-        console.log(`Document ID: ${doc.id}, username: ${doc.data().username}`);
-      });
-      return true;
-    }
+    // Return true if any matching documents exist (username is taken)
+    return querySnapshot.size > 0;
     
-    console.log(`Username "${trimmedUsername}" is AVAILABLE - no matching documents found`);
-    return false;
   } catch (error) {
     console.error("Error in isUsernameTaken:", error);
-    throw error; // Propagate the error instead of returning true
+    // Propagate the error instead of assuming username is taken
+    throw error;
   }
 };
 
