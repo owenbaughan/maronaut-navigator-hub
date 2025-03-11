@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -32,15 +33,16 @@ const SignUp = () => {
         setIsCheckingUsername(true);
         setUsernameChecked(false);
         try {
-          console.log("Initiating username availability check for:", trimmedUsername);
+          console.log("SignUp: Initiating username availability check for:", trimmedUsername);
           const isAvailable = await checkUsernameAvailability(trimmedUsername);
-          console.log("Username check result:", isAvailable);
+          console.log("SignUp: Username check result:", isAvailable);
           setIsUsernameTaken(!isAvailable);
           setUsernameChecked(true);
         } catch (error) {
-          console.error("Error checking username:", error);
-          setIsUsernameTaken(true);
-          setUsernameChecked(true);
+          console.error("SignUp: Error checking username:", error);
+          // Don't automatically set as taken, show the error instead
+          setError("Error checking username availability. Please try again.");
+          setUsernameChecked(false);
         } finally {
           setIsCheckingUsername(false);
         }
@@ -74,21 +76,18 @@ const SignUp = () => {
     }
     
     try {
+      console.log("SignUp: Final username check before submission:", username.trim().toLowerCase());
       const finalCheck = await checkUsernameAvailability(username.trim().toLowerCase());
+      console.log("SignUp: Final username check result:", finalCheck);
+      
       if (!finalCheck) {
         setError('This username is already taken');
         setIsUsernameTaken(true);
         return;
       }
-    } catch (error) {
-      console.error("Final username check failed:", error);
-      setError('Unable to verify username availability. Please try again.');
-      return;
-    }
-    
-    setIsLoading(true);
-
-    try {
+      
+      setIsLoading(true);
+      
       await signUp(username.trim().toLowerCase(), email, password);
       toast({
         title: "Account created successfully",
@@ -96,6 +95,7 @@ const SignUp = () => {
       });
       navigate('/dashboard');
     } catch (err: any) {
+      console.error("SignUp: Error during signup:", err);
       if (err.message === "Username is already taken") {
         setError("This username is already taken. Please choose another one.");
       } else {

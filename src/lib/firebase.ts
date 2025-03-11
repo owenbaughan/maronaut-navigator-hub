@@ -82,23 +82,22 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     console.log("Executing username availability query");
     const querySnapshot = await getDocs(q);
     
-    // Log the query results to debug
-    console.log(`Query returned ${querySnapshot.size} documents`);
+    // Enhanced debugging
+    console.log(`Username check query returned ${querySnapshot.size} documents for "${trimmedUsername}"`);
     
     if (querySnapshot.size > 0) {
-      console.log("Username is taken. Found matching document(s):");
+      console.log(`Username "${trimmedUsername}" is taken. Found ${querySnapshot.size} matching document(s):`);
       querySnapshot.forEach(doc => {
         console.log(`Document ID: ${doc.id}, username: ${doc.data().username}`);
       });
       return true;
     }
     
-    console.log(`Username ${trimmedUsername} is available`);
+    console.log(`Username "${trimmedUsername}" is AVAILABLE - no matching documents found`);
     return false;
   } catch (error) {
-    console.error("Error checking username:", error);
-    // On error, it's safer to return true (assume taken) to prevent duplicates
-    return true;
+    console.error("Error in isUsernameTaken:", error);
+    throw error; // Propagate the error instead of returning true
   }
 };
 
