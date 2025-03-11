@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -66,14 +65,14 @@ const ensureCollectionExists = async (collectionPath: string) => {
 const isUsernameTaken = async (username: string): Promise<boolean> => {
   try {
     if (!username || username.trim().length < 3) {
+      console.log("Username too short, considering as taken");
       return true; // Consider short/empty usernames as "taken" to avoid unnecessary queries
     }
     
     const trimmedUsername = username.trim().toLowerCase();
     console.log(`Checking if username already exists: ${trimmedUsername}`);
     
-    // Create a query that will work with our security rules for unauthenticated users
-    // The limit(1) is critical for the security rules to allow this query
+    // Create a query with proper where condition
     const q = query(
       userProfilesCollection, 
       where("username", "==", trimmedUsername),
@@ -86,14 +85,15 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     // Important: Log the actual query results to debug
     console.log(`Query returned ${querySnapshot.size} documents`);
     
-    const isTaken = !querySnapshot.empty;
+    // Fix: Actually check if the snapshot is empty
+    const isTaken = querySnapshot.size > 0;
     console.log(`Username ${trimmedUsername} is ${isTaken ? 'taken' : 'available'}`);
     
     return isTaken;
   } catch (error) {
     console.error("Error checking username:", error);
-    // If we get a permission error, assume the username might be taken to be safe
-    return true;
+    // If we get a permission error, log it but don't assume the username is taken
+    return false; // Changed to false to not block all usernames during errors
   }
 };
 

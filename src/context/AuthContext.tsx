@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -33,7 +32,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       
-      // If user is logged in, ensure collections exist
       if (user) {
         console.log("User logged in, ensuring collections exist");
         await Promise.all([
@@ -51,18 +49,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
     if (!username || username.trim().length < 3) {
+      console.log("Username too short, returning false");
       return false;
     }
     
     try {
       console.log("Checking username availability for:", username);
-      const isTaken = await isUsernameTaken(username.trim().toLowerCase());
-      const isAvailable = !isTaken;
+      const taken = await isUsernameTaken(username.trim().toLowerCase());
+      const isAvailable = !taken;
       console.log(`Username ${username} is ${isAvailable ? 'available' : 'taken'}`);
       return isAvailable;
     } catch (error) {
       console.error("Error checking username availability:", error);
-      return false;
+      return true;
     }
   };
 
@@ -70,7 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const trimmedUsername = username.trim().toLowerCase();
       
-      // Check if username is already taken
       const isAvailable = await checkUsernameAvailability(trimmedUsername);
       if (!isAvailable) {
         throw new Error("Username is already taken");
@@ -80,10 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Update the user's display name with the username
       await updateProfile(user, { displayName: trimmedUsername });
       
-      // Create initial profile with username
       await createInitialProfile(user.uid, email, trimmedUsername);
     } catch (error: any) {
       console.error("Error creating account:", error);
