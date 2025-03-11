@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   searchUsers, 
   followUser, 
@@ -12,28 +12,33 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const [noResults, setNoResults] = useState(false);
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!currentUserId) {
+  
+  const debounce = <F extends (...args: any[]) => any>(func: F, delay: number) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return function(...args: Parameters<F>) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  };
+  
+  const performSearch = useCallback(async (query: string) => {
+    if (!currentUserId) return;
+    if (query.trim() === '') {
+      setSearchResults([]);
+      setNoResults(false);
       return;
     }
     
-    if (searchQuery.trim() === '') return;
-    
     setIsSearching(true);
-    setShowResults(true);
     setNoResults(false);
     
     try {
-      console.log(`Searching for username: "${searchQuery}" from user ID: ${currentUserId}`);
+      console.log(`Searching for username: "${query}" from user ID: ${currentUserId}`);
       
-      const users = await searchUsers(searchQuery, currentUserId);
+      const users = await searchUsers(query, currentUserId);
       console.log("Search results returned:", users.length, "users");
       
       if (users.length === 0) {
@@ -42,11 +47,9 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
         return;
       }
       
-      // Get all pending follow requests to check against search results
       const { outgoingRequests } = await getFollowRequests(currentUserId);
       console.log("Current outgoing requests:", outgoingRequests);
       
-      // Check following status for each user
       const usersWithStatus = await Promise.all(
         users.map(async (user) => {
           console.log("Checking following status for user:", user.username);
@@ -56,7 +59,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
           if (isFollowing) {
             status = 'following';
           } else {
-            // Check if there's a pending request
             const hasPendingRequest = outgoingRequests.some(
               request => request.receiverId === user.id && request.status === 'pending'
             );
@@ -89,12 +91,30 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
     } finally {
       setIsSearching(false);
     }
+  }, [currentUserId]);
+  
+  const debouncedSearch = useCallback(
+    debounce((query: string) => performSearch(query), 300),
+    [performSearch]
+  );
+  
+  const handleSearchInput = useCallback((query: string) => {
+    if (query.trim() === '') {
+      setSearchResults([]);
+      setNoResults(false);
+    } else {
+      debouncedSearch(query);
+    }
+  }, [debouncedSearch]);
+  
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performSearch(searchQuery);
   };
 
   const handleFollowUser = async (user: UserSearchResult) => {
     if (!currentUserId) return;
     
-    // Prevent follow action if this user already has a pending request
     if (user.status === 'requested') {
       return;
     }
@@ -105,12 +125,10 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
       
       console.log(`Starting follow process for user ${user.username} (${user.id})`);
       
-      // Double-check if already following first
       const alreadyFollowing = await checkFollowingStatus(currentUserId, user.id);
       if (alreadyFollowing) {
         console.log("Already following this user, updating UI only");
         
-        // Update the user's status in search results to 'following'
         setSearchResults(prev => 
           prev.map(result => 
             result.id === user.id 
@@ -126,29 +144,22 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
         return;
       }
       
-      // Get target user's auto-accept setting
       const targetProfile = await getUserProfile(user.id);
       
-      // Important: Check BOTH settings for backward compatibility
-      // If either is missing or false, default to true for auto-accept
       const autoAcceptFollows = targetProfile?.privacySettings?.autoAcceptFollows;
       const autoAcceptFriends = targetProfile?.privacySettings?.autoAcceptFriends;
       
-      // If either setting is explicitly set to false, don't auto-accept
-      // Otherwise default to auto-accepting (both undefined or null = auto-accept)
       const autoAccept = !(autoAcceptFollows === false || autoAcceptFriends === false);
       
       console.log("Auto accept setting:", autoAccept, "from:", targetProfile?.privacySettings);
       console.log("autoAcceptFollows:", autoAcceptFollows, "autoAcceptFriends:", autoAcceptFriends);
       
-      // Follow user
       console.log(`Following user: ${currentUserId} -> ${user.id}`);
       const success = await followUser(currentUserId, user.id);
       console.log("Follow result:", success);
       
       if (success) {
         if (autoAccept) {
-          // Update the user's status in search results to 'following'
           setSearchResults(prev => 
             prev.map(result => 
               result.id === user.id 
@@ -157,7 +168,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
             )
           );
         } else {
-          // Update the user's status in search results to 'requested'
           setSearchResults(prev => 
             prev.map(result => 
               result.id === user.id 
@@ -167,7 +177,6 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
           );
         }
         
-        // Call the callback if provided to refresh the following list
         if (onUserAdded) {
           console.log("Calling onUserAdded callback to refresh following list");
           onUserAdded();
@@ -186,12 +195,11 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
     setSearchQuery,
     searchResults,
     isSearching,
-    showResults,
-    setShowResults,
     noResults,
     isFollowingUser,
     processingUserId,
     handleSearch,
+    handleSearchInput,
     handleFollowUser
   };
 };
