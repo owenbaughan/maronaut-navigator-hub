@@ -230,6 +230,7 @@ const FriendsFeed = () => {
                                       <AlertDialogTitle>Unfollow User</AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Are you sure you want to unfollow {user.username}? 
+                                        {formatDisplayName(user) && ` (${formatDisplayName(user)})`}
                                         You'll no longer see their trips in your feed.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
