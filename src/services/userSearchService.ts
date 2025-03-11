@@ -44,10 +44,11 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
       if (username.includes(lowercaseQuery)) {
         console.log("Match found! Adding to results:", userData.username);
         
-        // Ensure privacySettings exist
+        // Ensure privacySettings exist with all required properties
         const privacySettings = userData.privacySettings || {
           isPublicProfile: true,
-          autoAcceptFriends: false
+          autoAcceptFriends: false,
+          autoAcceptFollows: true
         };
         
         users.push({

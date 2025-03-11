@@ -8,7 +8,6 @@ import { useAuth } from '@/context/AuthContext';
 import { UserSearchProps } from './types';
 import SearchResultsList from './SearchResultsList';
 import { useUserSearch } from '@/hooks/use-user-search';
-import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
 
 const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const { currentUser } = useAuth();
@@ -26,14 +25,20 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     handleFollowUser
   } = useUserSearch(currentUser?.uid, onUserAdded);
   
-  // Profile dialog state
+  // State for tracking full profile view
+  const [showFullProfile, setShowFullProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
   // Handler for viewing a user's profile
   const handleViewProfile = (userId: string) => {
     setSelectedUserId(userId);
-    setProfileDialogOpen(true);
+    setShowFullProfile(true);
+  };
+
+  // Handler for going back to search results
+  const handleBackToResults = () => {
+    setShowFullProfile(false);
+    setSelectedUserId(null);
   };
 
   return (
@@ -59,14 +64,18 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       </form>
 
       <Dialog open={showResults} onOpenChange={setShowResults}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`sm:max-w-${showFullProfile ? '3xl' : 'md'}`}>
           <DialogHeader>
-            <DialogTitle>Search Results</DialogTitle>
-            <DialogDescription>
-              {searchResults.length > 0 
-                ? `Found ${searchResults.length} sailors matching '${searchQuery}'` 
-                : `No sailors found matching '${searchQuery}'`}
-            </DialogDescription>
+            <DialogTitle>
+              {showFullProfile ? 'User Profile' : 'Search Results'}
+            </DialogTitle>
+            {!showFullProfile && (
+              <DialogDescription>
+                {searchResults.length > 0 
+                  ? `Found ${searchResults.length} sailors matching '${searchQuery}'` 
+                  : `No sailors found matching '${searchQuery}'`}
+              </DialogDescription>
+            )}
           </DialogHeader>
           
           <SearchResultsList
@@ -76,16 +85,12 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
             onFollowUser={handleFollowUser}
             onViewProfile={handleViewProfile}
             searchQuery={searchQuery}
+            showFullProfile={showFullProfile}
+            selectedUserId={selectedUserId}
+            onBackToResults={handleBackToResults}
           />
         </DialogContent>
       </Dialog>
-      
-      {/* Profile dialog for viewing user profiles */}
-      <FriendProfileDialog
-        open={profileDialogOpen}
-        onOpenChange={setProfileDialogOpen}
-        friendId={selectedUserId}
-      />
     </>
   );
 };

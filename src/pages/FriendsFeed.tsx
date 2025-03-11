@@ -3,14 +3,12 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import TripTimeline from '../components/friends/TripTimeline';
-import { Search, UserCheck, UserPlus, UserMinus, Users } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { UserCheck, UserPlus, UserMinus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import UserSearch from '@/components/friends/UserSearch';
-import { useToast } from '@/components/ui/use-toast';
 import { 
   FollowingData, 
   getFollowing, 
@@ -19,7 +17,7 @@ import {
   getFollowRequests,
   FollowRequest
 } from '@/services/friendService';
-import FriendProfileDialog from '@/components/friends/FriendProfileDialog';
+import FriendProfile from '@/components/friends/FriendProfile';
 import FollowRequestsList from '@/components/friends/FollowRequestsList';
 import {
   AlertDialog,
@@ -32,10 +30,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const FriendsFeed = () => {
   const { currentUser } = useAuth();
-  const { toast } = useToast();
   
   const [following, setFollowing] = useState<FollowingData[]>([]);
   const [followers, setFollowers] = useState<FollowingData[]>([]);
@@ -43,6 +46,7 @@ const FriendsFeed = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [unfollowingUserId, setUnfollowingUserId] = useState<string | null>(null);
   
+  // New state for viewing profile in full screen dialog
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
@@ -76,11 +80,6 @@ const FriendsFeed = () => {
       
     } catch (error) {
       console.error("Error fetching follow data:", error);
-      toast({
-        title: "Failed to load following/followers",
-        description: "There was a problem loading your network connections",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }
@@ -95,24 +94,9 @@ const FriendsFeed = () => {
       
       if (success) {
         setFollowing(prev => prev.filter(user => user.followingId !== targetUserId));
-        toast({
-          title: "Unfollowed",
-          description: "You are no longer following this user",
-        });
-      } else {
-        toast({
-          title: "Failed to unfollow",
-          description: "There was a problem unfollowing this user",
-          variant: "destructive"
-        });
       }
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      toast({
-        title: "Failed to unfollow",
-        description: "There was a problem unfollowing this user",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
       setUnfollowingUserId(null);
@@ -295,11 +279,21 @@ const FriendsFeed = () => {
       </main>
       <Footer />
       
-      <FriendProfileDialog
-        open={profileDialogOpen}
-        onOpenChange={setProfileDialogOpen}
-        friendId={selectedUserId}
-      />
+      {/* Use the Dialog component for viewing profiles */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Profile</DialogTitle>
+          </DialogHeader>
+          
+          {selectedUserId && (
+            <FriendProfile
+              friendId={selectedUserId}
+              onBackToResults={() => setProfileDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
