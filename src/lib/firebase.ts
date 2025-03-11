@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -72,9 +71,10 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     const trimmedUsername = username.trim().toLowerCase();
     console.log(`Checking if username already exists: ${trimmedUsername}`);
     
-    // Create a properly limited query that will work with our security rules
+    // Create a query that will work with our security rules for unauthenticated users
+    // The limit(1) is critical for the security rules to allow this query
     const q = query(
-      collection(db, "userProfiles"), 
+      userProfilesCollection, 
       where("username", "==", trimmedUsername),
       limit(1)
     );
