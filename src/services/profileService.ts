@@ -1,4 +1,4 @@
-import { db, storage, isUsernameTaken } from "../lib/firebase";
+import { db, storage, isUsernameTaken, serverTimestamp } from "../lib/firebase";
 import { 
   doc, 
   getDoc, 
@@ -8,7 +8,6 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp,
   Timestamp,
   limit
 } from "firebase/firestore";
@@ -148,6 +147,13 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
+        if (sanitizedProfile.username) {
+          const isAvailable = await isUsernameAvailable(sanitizedProfile.username);
+          if (!isAvailable) {
+            throw new Error(`Username '${sanitizedProfile.username}' is already taken`);
+          }
+        }
+        
         const defaultProfile = {
           ...sanitizedProfile,
           privacySettings: sanitizedProfile.privacySettings || getDefaultPrivacySettings(),
@@ -270,31 +276,42 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 export const createInitialProfile = async (userId: string, email: string, username: string): Promise<void> => {
-  const existingProfile = await getUserProfile(userId).catch(() => null);
-  
-  if (!existingProfile) {
-    console.log("Creating initial profile for new user:", userId);
+  try {
+    const existingProfile = await getUserProfile(userId).catch(() => null);
     
-    const initialProfile: UserProfile = {
-      userId,
-      username: username.trim().toLowerCase(),
-      email,
-      location: "",
-      bio: "",
-      boatDetails: {
-        name: "",
-        type: "",
-        length: "",
-        homeMarina: ""
-      },
-      privacySettings: getDefaultPrivacySettings(),
-      sailingSince: "",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    await saveUserProfile(initialProfile);
-    console.log("Successfully created initial profile with username:", username);
+    if (!existingProfile) {
+      console.log("Creating initial profile for new user:", userId);
+      
+      const trimmedUsername = username.trim().toLowerCase();
+      const isAvailable = await isUsernameAvailable(trimmedUsername);
+      if (!isAvailable) {
+        throw new Error(`Username '${trimmedUsername}' is already taken`);
+      }
+      
+      const initialProfile: UserProfile = {
+        userId,
+        username: trimmedUsername,
+        email,
+        location: "",
+        bio: "",
+        boatDetails: {
+          name: "",
+          type: "",
+          length: "",
+          homeMarina: ""
+        },
+        privacySettings: getDefaultPrivacySettings(),
+        sailingSince: "",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await saveUserProfile(initialProfile);
+      console.log("Successfully created initial profile with username:", trimmedUsername);
+    }
+  } catch (error) {
+    console.error("Error creating initial profile:", error);
+    throw error;
   }
 };
 

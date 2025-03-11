@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return isAvailable;
     } catch (error) {
       console.error("Error checking username availability:", error);
-      return true;
+      return false;
     }
   };
 
@@ -115,7 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Updating Firebase Auth profile picture:", photoURL);
       await updateProfile(currentUser, { photoURL });
       
-      // Force refresh the currentUser object to get the updated photoURL
       setCurrentUser({ ...currentUser, photoURL });
       
       console.log("Profile picture updated successfully in Firebase Auth");

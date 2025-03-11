@@ -1,6 +1,5 @@
-
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, CollectionReference, getDocs, query, where, limit } from "firebase/firestore";
+import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { 
@@ -66,14 +65,14 @@ const ensureCollectionExists = async (collectionPath: string) => {
 const isUsernameTaken = async (username: string): Promise<boolean> => {
   try {
     if (!username || username.trim().length < 3) {
-      console.log("Username too short, considering as taken");
+      console.log("Username too short or empty, considering as taken");
       return true; // Consider short/empty usernames as "taken" to avoid unnecessary queries
     }
     
     const trimmedUsername = username.trim().toLowerCase();
     console.log(`Checking if username already exists: ${trimmedUsername}`);
     
-    // Create a query with proper where condition
+    // Create a query with proper where condition and limit
     const q = query(
       userProfilesCollection, 
       where("username", "==", trimmedUsername),
@@ -83,18 +82,23 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     console.log("Executing username availability query");
     const querySnapshot = await getDocs(q);
     
-    // Important: Log the actual query results to debug
+    // Log the query results to debug
     console.log(`Query returned ${querySnapshot.size} documents`);
     
-    // Fix: Actually check if the snapshot is empty
-    const isTaken = querySnapshot.size > 0;
-    console.log(`Username ${trimmedUsername} is ${isTaken ? 'taken' : 'available'}`);
+    if (querySnapshot.size > 0) {
+      console.log("Username is taken. Found matching document(s):");
+      querySnapshot.forEach(doc => {
+        console.log(`Document ID: ${doc.id}, username: ${doc.data().username}`);
+      });
+      return true;
+    }
     
-    return isTaken;
+    console.log(`Username ${trimmedUsername} is available`);
+    return false;
   } catch (error) {
     console.error("Error checking username:", error);
-    // If we get a permission error, log it but don't assume the username is taken
-    return false; // Changed to false to not block all usernames during errors
+    // On error, it's safer to return true (assume taken) to prevent duplicates
+    return true;
   }
 };
 
@@ -125,7 +129,8 @@ export {
   collection,
   ensureCollectionExists,
   isUsernameTaken,
-  limit
+  limit,
+  serverTimestamp
 };
 
 export type { User };

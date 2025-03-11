@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -26,18 +25,22 @@ const SignUp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Debounce username check
   useEffect(() => {
     const trimmedUsername = username.trim();
     if (trimmedUsername.length >= 3 && /^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
       const timer = setTimeout(async () => {
         setIsCheckingUsername(true);
+        setUsernameChecked(false);
         try {
+          console.log("Initiating username availability check for:", trimmedUsername);
           const isAvailable = await checkUsernameAvailability(trimmedUsername);
+          console.log("Username check result:", isAvailable);
           setIsUsernameTaken(!isAvailable);
           setUsernameChecked(true);
         } catch (error) {
           console.error("Error checking username:", error);
+          setIsUsernameTaken(true);
+          setUsernameChecked(true);
         } finally {
           setIsCheckingUsername(false);
         }
@@ -65,19 +68,21 @@ const SignUp = () => {
       return;
     }
     
-    // Check if username contains only letters and numbers
     if (!/^[a-zA-Z0-9]+$/.test(username)) {
       setError('Username can only contain letters and numbers (no spaces or special characters)');
       return;
     }
     
-    if (isUsernameTaken) {
-      setError('This username is already taken');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    try {
+      const finalCheck = await checkUsernameAvailability(username.trim().toLowerCase());
+      if (!finalCheck) {
+        setError('This username is already taken');
+        setIsUsernameTaken(true);
+        return;
+      }
+    } catch (error) {
+      console.error("Final username check failed:", error);
+      setError('Unable to verify username availability. Please try again.');
       return;
     }
     
