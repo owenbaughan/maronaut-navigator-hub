@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -92,6 +93,21 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
               });
             } else {
               console.log("No profile data found");
+              // Initialize with empty values
+              setProfileData({
+                userId: currentUser.uid,
+                username: displayName,
+                location: "",
+                bio: "",
+                boatDetails: {
+                  name: "",
+                  type: "",
+                  length: "",
+                  homeMarina: "",
+                },
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
             }
           }
         } catch (error) {
@@ -126,9 +142,23 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
       console.log("Updating profile for user:", currentUser.uid);
       
       // Update username in Firebase Auth
-      await updateProfile(currentUser, {
-        displayName: username
-      });
+      try {
+        await updateProfile(currentUser, {
+          displayName: username
+        });
+        console.log("Updated display name in Firebase Auth");
+      } catch (authError) {
+        console.error("Error updating Firebase Auth profile:", authError);
+        // Continue anyway as we still want to save the Firestore profile
+      }
+      
+      // Make sure the boat details are never undefined
+      const updatedBoatDetails: BoatDetails = {
+        name: boatDetails?.name || "",
+        type: boatDetails?.type || "",
+        length: boatDetails?.length || "",
+        homeMarina: boatDetails?.homeMarina || "",
+      };
       
       // Prepare profile data for saving to Firestore
       const updatedProfile: UserProfile = {
@@ -139,12 +169,14 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
         location,
         bio,
         sailingSince,
-        boatDetails,
+        boatDetails: updatedBoatDetails,
         profilePicture: profilePicture,
         email: currentUser.email || undefined,
         // Preserve original creation date if it exists
         createdAt: profileData.createdAt || new Date(),
         updatedAt: new Date(),
+        // Preserve privacy settings
+        privacySettings: profileData.privacySettings,
       };
       
       console.log("Saving profile with data:", updatedProfile);
@@ -167,7 +199,7 @@ const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: ProfileEdit
       console.error("Failed to update profile", error);
       toast({
         title: "Update failed",
-        description: "There was a problem updating your profile. Please try again.",
+        description: `There was a problem updating your profile: ${error.message || "Please try again."}`,
         variant: "destructive",
       });
     } finally {

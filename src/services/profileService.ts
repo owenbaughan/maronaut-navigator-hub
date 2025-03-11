@@ -135,27 +135,32 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
     
-    try {
-      const testDoc = await getDoc(userRef);
-      console.log("Read permission test:", testDoc ? "Success" : "No document exists yet");
-    } catch (error) {
-      console.error("Permission denied on read test. Firebase security rules may be blocking access:", error);
-      throw new Error("Permission denied: Check your Firebase security rules for userProfiles collection");
-    }
-    
-    const profileToSave = {
+    // Convert any Date objects to Firestore Timestamps and handle null/undefined fields
+    const sanitizedProfile = {
       ...profile,
-      createdAt: profile.createdAt instanceof Date ? profile.createdAt : profile.createdAt,
-      updatedAt: new Date()
+      // Handle createdAt conversion
+      createdAt: profile.createdAt instanceof Date 
+        ? Timestamp.fromDate(profile.createdAt) 
+        : profile.createdAt,
+      // Always update the updatedAt timestamp
+      updatedAt: serverTimestamp()
     };
+    
+    // Remove undefined fields as Firestore doesn't support them
+    Object.keys(sanitizedProfile).forEach(key => {
+      if (sanitizedProfile[key] === undefined) {
+        delete sanitizedProfile[key];
+      }
+    });
     
     try {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
+        // For new profiles, ensure we have default privacy settings
         const defaultProfile = {
-          ...profileToSave,
-          privacySettings: profileToSave.privacySettings || getDefaultPrivacySettings(),
+          ...sanitizedProfile,
+          privacySettings: sanitizedProfile.privacySettings || getDefaultPrivacySettings(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -166,36 +171,46 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       } else {
         const existingData = userDoc.data();
         
-        if (!profileToSave.privacySettings) {
-          profileToSave.privacySettings = existingData.privacySettings || getDefaultPrivacySettings();
+        // Ensure privacy settings are properly maintained
+        if (!sanitizedProfile.privacySettings) {
+          sanitizedProfile.privacySettings = existingData.privacySettings || getDefaultPrivacySettings();
         } else {
-          // Ensure backwards compatibility by copying autoAcceptFollows to autoAcceptFriends
-          if (profileToSave.privacySettings.autoAcceptFollows !== undefined) {
-            profileToSave.privacySettings.autoAcceptFriends = profileToSave.privacySettings.autoAcceptFollows;
-          } else if (profileToSave.privacySettings.autoAcceptFriends !== undefined) {
-            profileToSave.privacySettings.autoAcceptFollows = profileToSave.privacySettings.autoAcceptFriends;
+          // Ensure backwards compatibility
+          if (sanitizedProfile.privacySettings.autoAcceptFollows !== undefined) {
+            sanitizedProfile.privacySettings.autoAcceptFriends = sanitizedProfile.privacySettings.autoAcceptFollows;
+          } else if (sanitizedProfile.privacySettings.autoAcceptFriends !== undefined) {
+            sanitizedProfile.privacySettings.autoAcceptFollows = sanitizedProfile.privacySettings.autoAcceptFriends;
           }
         }
         
-        console.log("Updating profile with privacy settings:", profileToSave.privacySettings);
+        console.log("Updating profile with privacy settings:", sanitizedProfile.privacySettings);
         
-        await updateDoc(userRef, {
-          ...profileToSave,
-          createdAt: existingData.createdAt,
+        // Keep existing createdAt
+        const updateData = {
+          ...sanitizedProfile,
+          createdAt: existingData.createdAt || serverTimestamp(),
           updatedAt: serverTimestamp()
-        });
+        };
+        
+        await updateDoc(userRef, updateData);
         console.log("Updated existing profile for:", profile.userId);
       }
+      
+      // Save to localStorage as backup
+      saveToLocalStorage(profile);
     } catch (error) {
-      console.error("Permission denied on write operation. Firebase security rules may be blocking writes:", error);
-      throw new Error("Permission denied: Check your Firebase security rules for userProfiles collection");
+      console.error("Error writing to Firestore:", error);
+      throw new Error(`Failed to save profile: ${error.message}`);
     }
-    
-    saveToLocalStorage(profile);
   } catch (error) {
     console.error("Error saving user profile to Firestore:", error);
-    console.log("Saving to localStorage instead");
-    saveToLocalStorage(profile);
+    
+    // If localStorage fallback is enabled, save there
+    if (useLocalStorageFallback) {
+      console.log("Saving to localStorage instead");
+      saveToLocalStorage(profile);
+    }
+    
     throw error;
   }
 };
