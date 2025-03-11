@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -21,6 +20,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkUsernameAvailability: (username: string) => Promise<boolean>;
+  updateProfilePicture: (photoURL: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,6 +106,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfilePicture = async (photoURL: string) => {
+    try {
+      if (!currentUser) {
+        throw new Error("No user is signed in");
+      }
+      
+      console.log("Updating Firebase Auth profile picture:", photoURL);
+      await updateProfile(currentUser, { photoURL });
+      
+      // Force refresh the currentUser object to get the updated photoURL
+      setCurrentUser({ ...currentUser, photoURL });
+      
+      console.log("Profile picture updated successfully in Firebase Auth");
+    } catch (error: any) {
+      console.error("Error updating profile picture in Firebase Auth:", error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     isLoaded,
@@ -114,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     logout,
     checkUsernameAvailability,
+    updateProfilePicture,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

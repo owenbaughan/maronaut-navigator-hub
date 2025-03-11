@@ -70,7 +70,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friendId, onBackToResults
                 <ProfilePicture 
                   url={profile.profilePicture}
                   username={profile.username || "User"}
-                  size="md"
+                  size="lg"
                   editable={false}
                 />
               </div>

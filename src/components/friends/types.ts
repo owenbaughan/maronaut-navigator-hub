@@ -21,6 +21,7 @@ export interface FollowRequestItem {
   senderUsername: string;
   senderFirstName?: string;
   senderLastName?: string;
+  senderProfilePicture?: string | null;
   timestamp: any;
 }
 
@@ -31,6 +32,7 @@ export interface FriendRequestItem {
   senderUsername: string;
   senderFirstName?: string;
   senderLastName?: string;
+  senderProfilePicture?: string | null;
   timestamp: any;
 }
 

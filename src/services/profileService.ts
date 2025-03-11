@@ -17,7 +17,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 export interface PrivacySettings {
   isPublicProfile: boolean;
   autoAcceptFollows: boolean;
-  // For backward compatibility, include both field names
   autoAcceptFriends?: boolean;
   showEmail: boolean;
   showLocation: boolean;
@@ -115,7 +114,7 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
 export const getDefaultPrivacySettings = (): PrivacySettings => ({
   isPublicProfile: true,
   autoAcceptFollows: true,
-  autoAcceptFriends: true, // Include for backward compatibility
+  autoAcceptFriends: true,
   showEmail: false,
   showLocation: true,
   showBoatDetails: true
@@ -135,18 +134,14 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     console.log("Saving profile:", profile);
     const userRef = doc(db, "userProfiles", profile.userId);
     
-    // Convert any Date objects to Firestore Timestamps and handle null/undefined fields
     const sanitizedProfile = {
       ...profile,
-      // Handle createdAt conversion
       createdAt: profile.createdAt instanceof Date 
         ? Timestamp.fromDate(profile.createdAt) 
         : profile.createdAt,
-      // Always update the updatedAt timestamp
       updatedAt: serverTimestamp()
     };
     
-    // Remove undefined fields as Firestore doesn't support them
     Object.keys(sanitizedProfile).forEach(key => {
       if (sanitizedProfile[key] === undefined) {
         delete sanitizedProfile[key];
@@ -157,7 +152,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
-        // For new profiles, ensure we have default privacy settings
         const defaultProfile = {
           ...sanitizedProfile,
           privacySettings: sanitizedProfile.privacySettings || getDefaultPrivacySettings(),
@@ -171,11 +165,9 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       } else {
         const existingData = userDoc.data();
         
-        // Ensure privacy settings are properly maintained
         if (!sanitizedProfile.privacySettings) {
           sanitizedProfile.privacySettings = existingData.privacySettings || getDefaultPrivacySettings();
         } else {
-          // Ensure backwards compatibility
           if (sanitizedProfile.privacySettings.autoAcceptFollows !== undefined) {
             sanitizedProfile.privacySettings.autoAcceptFriends = sanitizedProfile.privacySettings.autoAcceptFollows;
           } else if (sanitizedProfile.privacySettings.autoAcceptFriends !== undefined) {
@@ -185,7 +177,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         
         console.log("Updating profile with privacy settings:", sanitizedProfile.privacySettings);
         
-        // Keep existing createdAt
         const updateData = {
           ...sanitizedProfile,
           createdAt: existingData.createdAt || serverTimestamp(),
@@ -196,7 +187,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
         console.log("Updated existing profile for:", profile.userId);
       }
       
-      // Save to localStorage as backup
       saveToLocalStorage(profile);
     } catch (error) {
       console.error("Error writing to Firestore:", error);
@@ -205,7 +195,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   } catch (error) {
     console.error("Error saving user profile to Firestore:", error);
     
-    // If localStorage fallback is enabled, save there
     if (useLocalStorageFallback) {
       console.log("Saving to localStorage instead");
       saveToLocalStorage(profile);
@@ -236,7 +225,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
           data.privacySettings = getDefaultPrivacySettings();
           console.log("Added default privacy settings to profile:", data.privacySettings);
         } else {
-          // Ensure both fields are present for backward compatibility
           if (data.privacySettings.autoAcceptFollows === undefined && data.privacySettings.autoAcceptFriends !== undefined) {
             data.privacySettings.autoAcceptFollows = data.privacySettings.autoAcceptFriends;
           } else if (data.privacySettings.autoAcceptFriends === undefined && data.privacySettings.autoAcceptFollows !== undefined) {
@@ -253,7 +241,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
           localProfile.privacySettings = getDefaultPrivacySettings();
           console.log("Added default privacy settings to local profile:", localProfile.privacySettings);
         } else if (localProfile && localProfile.privacySettings) {
-          // Ensure both fields are present for backward compatibility
           if (localProfile.privacySettings.autoAcceptFollows === undefined && localProfile.privacySettings.autoAcceptFriends !== undefined) {
             localProfile.privacySettings.autoAcceptFollows = localProfile.privacySettings.autoAcceptFriends;
           } else if (localProfile.privacySettings.autoAcceptFriends === undefined && localProfile.privacySettings.autoAcceptFollows !== undefined) {
@@ -275,7 +262,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     if (localProfile && !localProfile.privacySettings) {
       localProfile.privacySettings = getDefaultPrivacySettings();
     } else if (localProfile && localProfile.privacySettings) {
-      // Ensure both fields are present for backward compatibility
       if (localProfile.privacySettings.autoAcceptFollows === undefined && localProfile.privacySettings.autoAcceptFriends !== undefined) {
         localProfile.privacySettings.autoAcceptFollows = localProfile.privacySettings.autoAcceptFriends;
       } else if (localProfile.privacySettings.autoAcceptFriends === undefined && localProfile.privacySettings.autoAcceptFollows !== undefined) {

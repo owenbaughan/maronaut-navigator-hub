@@ -3,6 +3,7 @@ import React from 'react';
 import { UserPlus, UserCheck, Clock, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserSearchResult } from './types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface SearchResultItemProps {
   user: UserSearchResult;
@@ -51,15 +52,21 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     return null;
   };
 
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    return user.username.charAt(0).toUpperCase();
+  };
+
   return (
     <div 
       key={user.id} 
       className="flex items-center justify-between p-3 rounded-lg border border-maronaut-200 hover:bg-maronaut-50 transition-colors"
     >
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 bg-maronaut-300 rounded-full text-white flex items-center justify-center">
-          {user.username.charAt(0).toUpperCase()}
-        </div>
+        <Avatar className="h-10 w-10 bg-maronaut-300 text-white">
+          <AvatarImage src={user.profilePicture || undefined} alt={user.username} />
+          <AvatarFallback>{getInitials()}</AvatarFallback>
+        </Avatar>
         <div>
           <p className="font-medium">{user.username}</p>
           {displayName() && (

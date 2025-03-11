@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
 import { uploadProfilePicture } from '@/services/profileService';
-import { updateProfile } from '@/lib/firebase';
+import { toast } from '@/components/ui/use-toast';
 
 interface ProfilePictureProps {
   url?: string;
@@ -22,7 +22,7 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
   onPictureUpdated,
   editable = false,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, updateProfilePicture } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | undefined>(url);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,13 +57,21 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
       setIsUploading(true);
       
       if (!file.type.startsWith('image/')) {
-        console.error("Invalid file type");
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file (PNG, JPG, etc.)",
+          variant: "destructive"
+        });
         setIsUploading(false);
         return;
       }
       
       if (file.size > 5 * 1024 * 1024) {
-        console.error("File too large");
+        toast({
+          title: "File too large",
+          description: "Profile picture must be less than 5MB",
+          variant: "destructive"
+        });
         setIsUploading(false);
         return;
       }
@@ -84,8 +92,11 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         setImageUrl(downloadURL);
         
         // Update the user's profile in Firebase Auth
-        await updateProfile(currentUser, {
-          photoURL: downloadURL
+        await updateProfilePicture(downloadURL);
+        
+        toast({
+          title: "Profile picture updated",
+          description: "Your profile picture has been updated successfully"
         });
         
         // Notify parent component
@@ -98,10 +109,22 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         // Revert to previous image if upload fails
         URL.revokeObjectURL(objectUrl);
         setImageUrl(url);
+        
+        toast({
+          title: "Upload failed",
+          description: "There was a problem uploading your profile picture",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error in file handling:", error);
       setImageUrl(url);
+      
+      toast({
+        title: "Something went wrong",
+        description: "There was a problem with your profile picture",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
