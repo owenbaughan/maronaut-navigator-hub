@@ -85,15 +85,15 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     // Important: Log the actual query results to debug
     console.log(`Query returned ${querySnapshot.size} documents`);
     
-    // Fix: Actually check if the snapshot is empty
+    // Check if the snapshot contains any documents
     const isTaken = querySnapshot.size > 0;
     console.log(`Username ${trimmedUsername} is ${isTaken ? 'taken' : 'available'}`);
     
     return isTaken;
   } catch (error) {
     console.error("Error checking username:", error);
-    // If we get a permission error, log it but don't assume the username is taken
-    return false; // Changed to false to not block all usernames during errors
+    // If there's an error, we should assume the username might be taken for safety
+    return true; // Changed back to true to be cautious
   }
 };
 
