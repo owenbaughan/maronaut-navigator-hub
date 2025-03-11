@@ -8,7 +8,8 @@ import {
   doc,
   getDoc,
   addDoc,
-  Timestamp
+  Timestamp,
+  serverTimestamp
 } from "firebase/firestore";
 import { FollowRequest } from "./types";
 import { getUserProfile } from "./profileService";
@@ -129,14 +130,16 @@ export const acceptFollowRequest = async (requestId: string) => {
       
       const followingCollectionRef = collection(db, "following");
       
+      // Important: Since Firestore rules check that userId matches auth.uid
+      // We need to make sure the sender is the one "doing the following"
       const followData = {
-        userId: senderId, // Who is doing the following
-        followingId: receiverId, // Who is being followed
+        userId: senderId, // Who is doing the following (sender)
+        followingId: receiverId, // Who is being followed (receiver)
         username: senderProfile?.username || senderUsername || "Unknown",
         firstName: senderProfile?.firstName || senderFirstName || null,
         lastName: senderProfile?.lastName || senderLastName || null,
         photoURL: senderProfile?.profilePicture || null,
-        timestamp: Timestamp.now()
+        timestamp: serverTimestamp() // Use serverTimestamp for consistency
       };
       
       console.log("Adding follow relationship with data:", JSON.stringify(followData));
