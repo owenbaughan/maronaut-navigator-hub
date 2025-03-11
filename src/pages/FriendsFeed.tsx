@@ -30,12 +30,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const FriendsFeed = () => {
   const { currentUser } = useAuth();
@@ -46,9 +40,11 @@ const FriendsFeed = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [unfollowingUserId, setUnfollowingUserId] = useState<string | null>(null);
   
-  // New state for viewing profile in full screen dialog
+  // Profile view states
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState("trips");
+  const [prevActiveTab, setPrevActiveTab] = useState("trips");
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -104,8 +100,20 @@ const FriendsFeed = () => {
   };
 
   const handleViewUserProfile = (userId: string) => {
+    // Store the current tab before switching to profile view
+    if (!showUserProfile) {
+      setPrevActiveTab(activeTab);
+    }
+    
     setSelectedUserId(userId);
-    setProfileDialogOpen(true);
+    setShowUserProfile(true);
+    setActiveTab("profile");
+  };
+  
+  const handleBackToList = () => {
+    setShowUserProfile(false);
+    setSelectedUserId(null);
+    setActiveTab(prevActiveTab);
   };
 
   return (
@@ -123,8 +131,8 @@ const FriendsFeed = () => {
                 <UserSearch onUserAdded={fetchFollowData} />
               </div>
               
-              <Tabs defaultValue="trips" className="animate-fade-in mb-10">
-                <TabsList className="grid grid-cols-3 w-full mb-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in mb-10">
+                <TabsList className="grid grid-cols-4 w-full mb-6">
                   <TabsTrigger value="trips">Trips</TabsTrigger>
                   <TabsTrigger value="following">Following</TabsTrigger>
                   <TabsTrigger value="followers">
@@ -135,6 +143,9 @@ const FriendsFeed = () => {
                       </span>
                     )}
                   </TabsTrigger>
+                  {showUserProfile && (
+                    <TabsTrigger value="profile">Profile</TabsTrigger>
+                  )}
                 </TabsList>
                 
                 <TabsContent value="trips">
@@ -272,28 +283,35 @@ const FriendsFeed = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
+                
+                <TabsContent value="profile">
+                  {selectedUserId && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>User Profile</CardTitle>
+                        <Button 
+                          variant="ghost" 
+                          onClick={handleBackToList} 
+                          className="text-maronaut-500 mt-2"
+                        >
+                          &larr; Back
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        <FriendProfile
+                          friendId={selectedUserId}
+                          onBackToResults={handleBackToList}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
           </div>
         </section>
       </main>
       <Footer />
-      
-      {/* Use the Dialog component for viewing profiles */}
-      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>User Profile</DialogTitle>
-          </DialogHeader>
-          
-          {selectedUserId && (
-            <FriendProfile
-              friendId={selectedUserId}
-              onBackToResults={() => setProfileDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
