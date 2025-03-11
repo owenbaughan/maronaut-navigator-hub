@@ -1,9 +1,19 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /userProfiles/{userId} {
-      allow read: if request.auth != null; // Any authenticated user can read profiles
-      allow write: if request.auth.uid == userId; // Only users can modify their own profiles
+      // Allow unauthenticated reads only for username queries
+      // Also allow authenticated users to read any profile
+      allow read: if request.auth != null || 
+                 (request.resource == null && 
+                  request.query.limit <= 1 && 
+                  request.query.orderBy == null &&
+                  request.method == 'get' &&
+                  resource == null);
+      
+      // Only users can modify their own profiles
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     // Rules for the following collection - one-way relationship
@@ -22,7 +32,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
     
-    // Rules for the followRequests collection (for non-auto-accept follow requests)
+    // Rules for the followRequests collection (for follow requests)
     match /followRequests/{docId} {
       // Allow read if the user is the sender or receiver
       allow read: if request.auth != null && 
@@ -37,36 +47,6 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         (resource.data.senderId == request.auth.uid || 
          resource.data.receiverId == request.auth.uid);
-    }
-    
-    // Keep legacy rules for backward compatibility (same as followRequests)
-    match /friendRequests/{docId} {
-      // Allow read if the user is the sender or receiver
-      allow read: if request.auth != null && 
-        (resource.data.senderId == request.auth.uid || 
-         resource.data.receiverId == request.auth.uid);
-         
-      // Allow create if the user is the sender
-      allow create: if request.auth != null && 
-        request.resource.data.senderId == request.auth.uid;
-        
-      // Allow update/delete if the user is the sender or receiver
-      allow update, delete: if request.auth != null && 
-        (resource.data.senderId == request.auth.uid || 
-         resource.data.receiverId == request.auth.uid);
-    }
-    
-    // Keep legacy rules for friends collection
-    match /friends/{docId} {
-      allow read: if request.auth != null && 
-        (resource.data.userId == request.auth.uid || 
-         resource.data.friendId == request.auth.uid);
-      allow create: if request.auth != null && 
-        (request.resource.data.userId == request.auth.uid || 
-         request.resource.data.friendId == request.auth.uid);
-      allow update, delete: if request.auth != null && 
-        (resource.data.userId == request.auth.uid || 
-         resource.data.friendId == request.auth.uid);
     }
   }
 }

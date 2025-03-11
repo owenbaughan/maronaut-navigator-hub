@@ -55,11 +55,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
+      console.log("Checking username availability for:", username);
       const isTaken = await isUsernameTaken(username.trim().toLowerCase());
-      return !isTaken;
+      const isAvailable = !isTaken;
+      console.log(`Username ${username} is ${isAvailable ? 'available' : 'taken'}`);
+      return isAvailable;
     } catch (error) {
       console.error("Error checking username availability:", error);
-      throw error;
+      return false;
     }
   };
 
