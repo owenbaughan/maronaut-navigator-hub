@@ -33,3 +33,8 @@ export interface FriendRequestItem {
   senderLastName?: string;
   timestamp: any;
 }
+
+// Props for the UserSearch component
+export interface UserSearchProps {
+  onUserAdded?: () => void;
+}
