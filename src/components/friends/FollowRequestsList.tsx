@@ -4,6 +4,7 @@ import { FollowRequest } from '@/services/types';
 import { Button } from '@/components/ui/button';
 import { UserCheck, UserX, Clock } from 'lucide-react';
 import { acceptFollowRequest, rejectFollowRequest } from '@/services/requestService';
+import { toast } from "sonner";
 
 interface FollowRequestsListProps {
   requests: FollowRequest[];
@@ -20,6 +21,17 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
     return null;
   }
 
+  const formatDisplayName = (request: FollowRequest) => {
+    if (request.senderFirstName && request.senderLastName) {
+      return `${request.senderFirstName} ${request.senderLastName}`;
+    } else if (request.senderFirstName) {
+      return request.senderFirstName;
+    } else if (request.senderLastName) {
+      return request.senderLastName;
+    }
+    return null;
+  };
+
   const handleAcceptRequest = async (requestId: string) => {
     try {
       setProcessingRequestIds(prev => [...prev, requestId]);
@@ -29,10 +41,14 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
       console.log("Accept follow request result:", success);
       
       if (success) {
+        toast.success("Follow request accepted");
         onRequestAction();
+      } else {
+        toast.error("Failed to accept follow request");
       }
     } catch (error) {
       console.error("Error accepting follow request:", error);
+      toast.error("Error accepting follow request");
     } finally {
       setProcessingRequestIds(prev => prev.filter(id => id !== requestId));
     }
@@ -44,10 +60,14 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
       
       const success = await rejectFollowRequest(requestId);
       if (success) {
+        toast.success("Follow request declined");
         onRequestAction();
+      } else {
+        toast.error("Failed to decline follow request");
       }
     } catch (error) {
       console.error("Error rejecting follow request:", error);
+      toast.error("Error declining follow request");
     } finally {
       setProcessingRequestIds(prev => prev.filter(id => id !== requestId));
     }
@@ -64,6 +84,9 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
             </div>
             <div>
               <p className="font-medium">{request.senderUsername}</p>
+              {formatDisplayName(request) && (
+                <p className="text-sm text-maronaut-600">{formatDisplayName(request)}</p>
+              )}
               <div className="flex items-center text-sm text-maronaut-500">
                 <Clock className="h-3.5 w-3.5 mr-1" />
                 <span>Requested to follow you</span>

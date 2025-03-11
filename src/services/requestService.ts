@@ -49,7 +49,9 @@ export const getFollowRequests = async (userId: string) => {
         status: data.status,
         timestamp: data.timestamp,
         senderUsername: data.senderUsername,
-        receiverUsername: data.receiverUsername
+        receiverUsername: data.receiverUsername,
+        senderFirstName: data.senderFirstName || null,
+        senderLastName: data.senderLastName || null
       });
     });
     
@@ -62,7 +64,9 @@ export const getFollowRequests = async (userId: string) => {
         status: data.status,
         timestamp: data.timestamp,
         senderUsername: data.senderUsername,
-        receiverUsername: data.receiverUsername
+        receiverUsername: data.receiverUsername,
+        senderFirstName: data.senderFirstName || null,
+        senderLastName: data.senderLastName || null
       });
     });
     
@@ -94,7 +98,7 @@ export const acceptFollowRequest = async (requestId: string) => {
       return false;
     }
     
-    const { senderId, receiverId, senderUsername } = requestData;
+    const { senderId, receiverId, senderUsername, senderFirstName, senderLastName } = requestData;
     
     // Update the request status first (mark as accepted)
     try {
@@ -129,6 +133,8 @@ export const acceptFollowRequest = async (requestId: string) => {
         userId: senderId, // Who is doing the following
         followingId: receiverId, // Who is being followed
         username: senderProfile?.username || senderUsername || "Unknown",
+        firstName: senderProfile?.firstName || senderFirstName || null,
+        lastName: senderProfile?.lastName || senderLastName || null,
         photoURL: senderProfile?.profilePicture || null,
         timestamp: Timestamp.now()
       };

@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const FriendsFeed = () => {
   const { currentUser } = useAuth();
@@ -86,6 +87,7 @@ const FriendsFeed = () => {
       
     } catch (error) {
       console.error("Error fetching follow data:", error);
+      toast.error("Error loading social data");
     } finally {
       setIsLoading(false);
     }
