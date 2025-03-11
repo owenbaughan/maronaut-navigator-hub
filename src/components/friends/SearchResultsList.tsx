@@ -8,6 +8,7 @@ interface SearchResultsListProps {
   isFollowingUser: boolean;
   processingUserId: string | null;
   onFollowUser: (user: UserSearchResult) => void;
+  onViewProfile: (userId: string) => void;
   searchQuery: string;
 }
 
@@ -16,6 +17,7 @@ const SearchResultsList: React.FC<SearchResultsListProps> = ({
   isFollowingUser,
   processingUserId,
   onFollowUser,
+  onViewProfile,
   searchQuery
 }) => {
   if (searchResults.length === 0) {
@@ -35,6 +37,7 @@ const SearchResultsList: React.FC<SearchResultsListProps> = ({
           isFollowingUser={isFollowingUser}
           processingUserId={processingUserId}
           onFollowUser={onFollowUser}
+          onViewProfile={onViewProfile}
         />
       ))}
     </div>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserPlus, UserCheck, Clock } from 'lucide-react';
+import { UserPlus, UserCheck, Clock, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserSearchResult } from './types';
 
@@ -9,13 +9,15 @@ interface SearchResultItemProps {
   isFollowingUser: boolean;
   processingUserId: string | null;
   onFollowUser: (user: UserSearchResult) => void;
+  onViewProfile: (userId: string) => void;
 }
 
 const SearchResultItem: React.FC<SearchResultItemProps> = ({
   user,
   isFollowingUser,
   processingUserId,
-  onFollowUser
+  onFollowUser,
+  onViewProfile
 }) => {
   // Helper function to determine button text based on user's privacy settings and status
   const getFollowButtonText = (user: UserSearchResult) => {
@@ -34,6 +36,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     return requiresRequest ? "Request Follow" : "Follow";
   };
 
+  // Check if profile is public
+  const isPublicProfile = user.privacySettings?.isPublicProfile !== false;
+
   return (
     <div 
       key={user.id} 
@@ -45,31 +50,51 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
         </div>
         <div>
           <p className="font-medium">{user.username}</p>
+          {!isPublicProfile && (
+            <div className="flex items-center text-sm text-amber-600">
+              <AlertCircle size={12} className="mr-1" />
+              <span>Private profile</span>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Following status buttons */}
-      {user.status === 'following' ? (
-        <div className="flex items-center text-green-600">
-          <UserCheck size={18} className="mr-1" />
-          <span className="text-sm">Following</span>
-        </div>
-      ) : user.status === 'requested' ? (
-        <div className="flex items-center text-amber-600">
-          <Clock size={18} className="mr-1" />
-          <span className="text-sm">Requested</span>
-        </div>
-      ) : (
-        <Button 
-          size="sm"
-          className="bg-maronaut-500 hover:bg-maronaut-600"
-          onClick={() => onFollowUser(user)}
-          disabled={isFollowingUser && processingUserId === user.id}
-        >
-          <UserPlus size={16} className="mr-1" />
-          {getFollowButtonText(user)}
-        </Button>
-      )}
+      <div className="flex items-center gap-2">
+        {/* View Profile button for public profiles */}
+        {isPublicProfile && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewProfile(user.id)}
+          >
+            <User size={16} className="mr-1" />
+            View Profile
+          </Button>
+        )}
+        
+        {/* Following status buttons */}
+        {user.status === 'following' ? (
+          <div className="flex items-center text-green-600">
+            <UserCheck size={18} className="mr-1" />
+            <span className="text-sm">Following</span>
+          </div>
+        ) : user.status === 'requested' ? (
+          <div className="flex items-center text-amber-600">
+            <Clock size={18} className="mr-1" />
+            <span className="text-sm">Requested</span>
+          </div>
+        ) : (
+          <Button 
+            size="sm"
+            className="bg-maronaut-500 hover:bg-maronaut-600"
+            onClick={() => onFollowUser(user)}
+            disabled={isFollowingUser && processingUserId === user.id}
+          >
+            <UserPlus size={16} className="mr-1" />
+            {getFollowButtonText(user)}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
