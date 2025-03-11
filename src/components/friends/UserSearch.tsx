@@ -2,16 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { UserSearchProps } from './types';
 import SearchResultsList from './SearchResultsList';
 import { useUserSearch } from '@/hooks/use-user-search';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const { currentUser } = useAuth();
@@ -54,6 +48,16 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
   const handleClearSearch = () => {
     setSearchQuery('');
     setDropdownOpen(false);
+  };
+
+  const handleViewProfile = (userId: string) => {
+    // Close the dropdown
+    setDropdownOpen(false);
+    setSearchQuery('');
+    
+    // Dispatch custom event to notify parent component
+    const event = new CustomEvent('viewUserProfile', { detail: { userId } });
+    document.dispatchEvent(event);
   };
 
   return (
@@ -105,22 +109,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
               isFollowingUser={isFollowingUser}
               processingUserId={processingUserId}
               onFollowUser={handleFollowUser}
-              onViewProfile={(userId) => {
-                // Close the dropdown
-                setDropdownOpen(false);
-                setSearchQuery('');
-                
-                // Use the parent component's view profile handler
-                if (onUserAdded) {
-                  // This is a trick - we're using the onUserAdded prop to signal 
-                  // to the parent that we want to view a profile
-                  onUserAdded();
-                  
-                  // Manually trigger a DOM event to signal the parent component
-                  const event = new CustomEvent('viewUserProfile', { detail: { userId } });
-                  document.dispatchEvent(event);
-                }
-              }}
+              onViewProfile={handleViewProfile}
               searchQuery={searchQuery}
             />
           </div>
