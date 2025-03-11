@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -81,6 +82,10 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     
     console.log("Executing username availability query");
     const querySnapshot = await getDocs(q);
+    
+    // Important: Log the actual query results to debug
+    console.log(`Query returned ${querySnapshot.size} documents`);
+    
     const isTaken = !querySnapshot.empty;
     console.log(`Username ${trimmedUsername} is ${isTaken ? 'taken' : 'available'}`);
     
