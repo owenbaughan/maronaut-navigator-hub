@@ -24,22 +24,6 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     handleSearch,
     handleFollowUser
   } = useUserSearch(currentUser?.uid, onUserAdded);
-  
-  // State for tracking full profile view
-  const [showFullProfile, setShowFullProfile] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  
-  // Handler for viewing a user's profile
-  const handleViewProfile = (userId: string) => {
-    setSelectedUserId(userId);
-    setShowFullProfile(true);
-  };
-
-  // Handler for going back to search results
-  const handleBackToResults = () => {
-    setShowFullProfile(false);
-    setSelectedUserId(null);
-  };
 
   return (
     <>
@@ -64,18 +48,14 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
       </form>
 
       <Dialog open={showResults} onOpenChange={setShowResults}>
-        <DialogContent className={`sm:max-w-${showFullProfile ? '3xl' : 'md'}`}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {showFullProfile ? 'User Profile' : 'Search Results'}
-            </DialogTitle>
-            {!showFullProfile && (
-              <DialogDescription>
-                {searchResults.length > 0 
-                  ? `Found ${searchResults.length} sailors matching '${searchQuery}'` 
-                  : `No sailors found matching '${searchQuery}'`}
-              </DialogDescription>
-            )}
+            <DialogTitle>Search Results</DialogTitle>
+            <DialogDescription>
+              {searchResults.length > 0 
+                ? `Found ${searchResults.length} sailors matching '${searchQuery}'` 
+                : `No sailors found matching '${searchQuery}'`}
+            </DialogDescription>
           </DialogHeader>
           
           <SearchResultsList
@@ -83,11 +63,23 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
             isFollowingUser={isFollowingUser}
             processingUserId={processingUserId}
             onFollowUser={handleFollowUser}
-            onViewProfile={handleViewProfile}
+            onViewProfile={(userId) => {
+              // Close the search dialog
+              setShowResults(false);
+              
+              // Use the parent component's view profile handler
+              if (onUserAdded) {
+                // This is a trick - we're using the onUserAdded prop to signal 
+                // to the parent that we want to view a profile
+                // The parent component will handle setting up the profile view
+                onUserAdded();
+                
+                // Manually trigger a DOM event to signal the parent component
+                const event = new CustomEvent('viewUserProfile', { detail: { userId } });
+                document.dispatchEvent(event);
+              }
+            }}
             searchQuery={searchQuery}
-            showFullProfile={showFullProfile}
-            selectedUserId={selectedUserId}
-            onBackToResults={handleBackToResults}
           />
         </DialogContent>
       </Dialog>

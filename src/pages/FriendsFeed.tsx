@@ -54,6 +54,22 @@ const FriendsFeed = () => {
     }
   }, [currentUser]);
   
+  // Listen for custom event from UserSearch component
+  useEffect(() => {
+    const handleViewUserProfile = (event: CustomEvent) => {
+      const { userId } = event.detail;
+      handleViewUserProfile(userId);
+    };
+    
+    // Add event listener
+    document.addEventListener('viewUserProfile', handleViewUserProfile as EventListener);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('viewUserProfile', handleViewUserProfile as EventListener);
+    };
+  }, []);
+  
   const fetchFollowData = async () => {
     if (!currentUser) return;
     

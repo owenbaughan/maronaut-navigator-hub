@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { UserSearchResult } from './types';
 import SearchResultItem from './SearchResultItem';
-import FriendProfile from './FriendProfile';
 
 interface SearchResultsListProps {
   searchResults: UserSearchResult[];
@@ -11,9 +10,6 @@ interface SearchResultsListProps {
   onFollowUser: (user: UserSearchResult) => void;
   onViewProfile: (userId: string) => void;
   searchQuery: string;
-  showFullProfile: boolean;
-  selectedUserId: string | null;
-  onBackToResults: () => void;
 }
 
 const SearchResultsList: React.FC<SearchResultsListProps> = ({
@@ -22,21 +18,8 @@ const SearchResultsList: React.FC<SearchResultsListProps> = ({
   processingUserId,
   onFollowUser,
   onViewProfile,
-  searchQuery,
-  showFullProfile,
-  selectedUserId,
-  onBackToResults
+  searchQuery
 }) => {
-  // If we're showing a full profile, render that instead of the results list
-  if (showFullProfile && selectedUserId) {
-    return (
-      <FriendProfile 
-        friendId={selectedUserId} 
-        onBackToResults={onBackToResults}
-      />
-    );
-  }
-
   if (searchResults.length === 0) {
     return (
       <div className="text-center py-6">
