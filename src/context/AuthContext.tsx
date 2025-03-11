@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return isAvailable;
     } catch (error) {
       console.error("Error checking username availability:", error);
-      return false;
+      return true;
     }
   };
 
