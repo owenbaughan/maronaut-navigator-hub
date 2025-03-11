@@ -38,6 +38,18 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 
   // Check if profile is public
   const isPublicProfile = user.privacySettings?.isPublicProfile !== false;
+  
+  // Format name display
+  const displayName = () => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user.firstName) {
+      return user.firstName;
+    } else if (user.lastName) {
+      return user.lastName;
+    }
+    return null;
+  };
 
   return (
     <div 
@@ -50,6 +62,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
         </div>
         <div>
           <p className="font-medium">{user.username}</p>
+          {displayName() && (
+            <p className="text-sm text-maronaut-600">{displayName()}</p>
+          )}
           {!isPublicProfile && (
             <div className="flex items-center text-sm text-amber-600">
               <AlertCircle size={12} className="mr-1" />

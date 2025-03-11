@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -225,6 +226,22 @@ const Profile = () => {
                                 <span className="text-maronaut-700">{profileData?.username || currentUser?.displayName || "Not set"}</span>
                               </div>
                               <p className="text-sm text-maronaut-500 mt-1">This is how others see you on Maronaut</p>
+                            </div>
+                          </div>
+                          
+                          {/* Add First and Last Name display */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>First Name</Label>
+                              <div className="flex items-center mt-1">
+                                <span className="text-maronaut-700">{profileData?.firstName || "Not set"}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Last Name</Label>
+                              <div className="flex items-center mt-1">
+                                <span className="text-maronaut-700">{profileData?.lastName || "Not set"}</span>
+                              </div>
                             </div>
                           </div>
                         </CardContent>

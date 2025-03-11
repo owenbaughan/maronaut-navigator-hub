@@ -7,12 +7,16 @@ export interface FollowingData {
   followingId: string;
   timestamp: Timestamp;
   username?: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string | null;
 }
 
 export interface UserProfileData {
   userId: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   profilePicture?: string | null;
   privacySettings?: {
     isPublicProfile: boolean;
@@ -32,6 +36,8 @@ export interface FollowRequest {
   timestamp: Timestamp;
   senderUsername?: string;
   receiverUsername?: string;
+  senderFirstName?: string;
+  senderLastName?: string;
 }
 
 export interface FriendData {
@@ -40,5 +46,7 @@ export interface FriendData {
   friendId: string;
   timestamp: Timestamp;
   username?: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string | null;
 }

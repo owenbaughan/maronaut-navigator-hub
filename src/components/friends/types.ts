@@ -1,23 +1,31 @@
 
-import { FollowRequest } from '@/services/types';
-
+// For search results
 export interface UserSearchResult {
   id: string;
   username: string;
-  profilePicture: string | null;
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: string | null;
+  status?: 'following' | 'requested' | null;
   privacySettings?: {
-    isPublicProfile: boolean;
+    isPublicProfile?: boolean;
     autoAcceptFollows?: boolean;
     autoAcceptFriends?: boolean;
   };
-  status?: 'following' | 'requested' | null;
 }
 
-export interface UserSearchProps {
-  onUserAdded?: () => void;
+// For follow requests
+export interface FollowRequestItem {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  timestamp: any;
 }
 
-export interface FollowRequestsListProps {
-  requests: FollowRequest[];
-  onRequestAction: () => void;
+// For friend requests
+export interface FriendRequestItem {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  timestamp: any;
 }

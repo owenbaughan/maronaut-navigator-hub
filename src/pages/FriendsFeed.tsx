@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -40,7 +39,6 @@ const FriendsFeed = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [unfollowingUserId, setUnfollowingUserId] = useState<string | null>(null);
   
-  // Profile view states
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [activeTab, setActiveTab] = useState("trips");
@@ -54,17 +52,14 @@ const FriendsFeed = () => {
     }
   }, [currentUser]);
   
-  // Listen for custom event from UserSearch component
   useEffect(() => {
     const handleViewUserProfile = (event: CustomEvent) => {
       const { userId } = event.detail;
       handleViewUserProfile(userId);
     };
     
-    // Add event listener
     document.addEventListener('viewUserProfile', handleViewUserProfile as EventListener);
     
-    // Clean up
     return () => {
       document.removeEventListener('viewUserProfile', handleViewUserProfile as EventListener);
     };
@@ -77,7 +72,6 @@ const FriendsFeed = () => {
     try {
       console.log("Fetching follow data for user:", currentUser.uid);
       
-      // Get follow requests
       const requests = await getFollowRequests(currentUser.uid);
       console.log("Fetched follow requests:", requests);
       setIncomingRequests(requests.incomingRequests);
@@ -116,7 +110,6 @@ const FriendsFeed = () => {
   };
 
   const handleViewUserProfile = (userId: string) => {
-    // Store the current tab before switching to profile view
     if (!showUserProfile) {
       setPrevActiveTab(activeTab);
     }
@@ -130,6 +123,17 @@ const FriendsFeed = () => {
     setShowUserProfile(false);
     setSelectedUserId(null);
     setActiveTab(prevActiveTab);
+  };
+
+  const formatDisplayName = (user: FollowingData) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user.firstName) {
+      return user.firstName;
+    } else if (user.lastName) {
+      return user.lastName;
+    }
+    return null;
   };
 
   return (
@@ -196,6 +200,9 @@ const FriendsFeed = () => {
                                 </div>
                                 <div>
                                   <p className="font-medium">{user.username}</p>
+                                  {formatDisplayName(user) && (
+                                    <p className="text-sm text-maronaut-600">{formatDisplayName(user)}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex gap-2">
@@ -281,6 +288,9 @@ const FriendsFeed = () => {
                                     </div>
                                     <div>
                                       <p className="font-medium">{user.username}</p>
+                                      {formatDisplayName(user) && (
+                                        <p className="text-sm text-maronaut-600">{formatDisplayName(user)}</p>
+                                      )}
                                     </div>
                                   </div>
                                   <Button 

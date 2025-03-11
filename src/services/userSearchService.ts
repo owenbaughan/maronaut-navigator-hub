@@ -54,6 +54,8 @@ export const searchUsers = async (searchQuery: string, currentUserId: string) =>
         users.push({
           id: userData.userId,
           username: userData.username,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
           profilePicture: userData.profilePicture || null,
           privacySettings: privacySettings
         });

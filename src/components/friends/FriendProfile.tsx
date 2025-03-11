@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getPublicUserProfile } from '@/services/profileService';
 import { Button } from '@/components/ui/button';
@@ -80,11 +79,19 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friendId, onBackToResults
                 <h1 className="text-2xl md:text-3xl font-bold text-maronaut-700 mb-2">
                   {profile.username}
                 </h1>
-                {profile.firstName && profile.lastName && (
+                {profile.firstName && profile.lastName ? (
                   <h2 className="text-xl text-maronaut-600 mb-2">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                )}
+                ) : profile.firstName ? (
+                  <h2 className="text-xl text-maronaut-600 mb-2">
+                    {profile.firstName}
+                  </h2>
+                ) : profile.lastName ? (
+                  <h2 className="text-xl text-maronaut-600 mb-2">
+                    {profile.lastName}
+                  </h2>
+                ) : null}
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-maronaut-600 mb-4">
                   {profile.location && (
                     <div className="flex items-center">
