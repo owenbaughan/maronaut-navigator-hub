@@ -62,8 +62,13 @@ const ensureCollectionExists = async (collectionPath: string) => {
 };
 
 // Check if a username is already taken
+// This function needs to work for both authenticated and unauthenticated users
 const isUsernameTaken = async (username: string): Promise<boolean> => {
   try {
+    if (!username || username.trim().length < 3) {
+      return true; // Consider short/empty usernames as "taken" to avoid unnecessary queries
+    }
+    
     console.log(`Checking if username already exists: ${username}`);
     const q = query(
       collection(db, "userProfiles"), 
