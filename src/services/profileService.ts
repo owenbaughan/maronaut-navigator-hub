@@ -1,5 +1,4 @@
-
-import { db, storage } from "../lib/firebase";
+import { db, storage, isUsernameTaken } from "../lib/firebase";
 import { 
   doc, 
   getDoc, 
@@ -60,8 +59,13 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 };
 
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
-  console.log("Username availability check is disabled, returning true for:", username);
-  return true;
+  try {
+    const isTaken = await isUsernameTaken(username.trim().toLowerCase());
+    return !isTaken;
+  } catch (error) {
+    console.error("Error checking username availability:", error);
+    return false;
+  }
 };
 
 export const uploadProfilePicture = async (userId: string, file: File): Promise<string> => {

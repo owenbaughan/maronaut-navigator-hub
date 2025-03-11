@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Header from '../components/layout/Header';
@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Lock, AlertCircle, User } from 'lucide-react';
+import { Mail, Lock, AlertCircle, User, Check, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/use-toast';
 
 const SignUp = () => {
   const [username, setUsername] = useState('');
@@ -18,12 +19,41 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signUp } = useAuth();
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
+  const [usernameChecked, setUsernameChecked] = useState(false);
+  const { signUp, checkUsernameAvailability } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Debounce username check
+  useEffect(() => {
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length >= 3 && /^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
+      const timer = setTimeout(async () => {
+        setIsCheckingUsername(true);
+        try {
+          const isAvailable = await checkUsernameAvailability(trimmedUsername);
+          setIsUsernameTaken(!isAvailable);
+          setUsernameChecked(true);
+        } catch (error) {
+          console.error("Error checking username:", error);
+        } finally {
+          setIsCheckingUsername(false);
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setUsernameChecked(false);
+      setIsUsernameTaken(false);
+    }
+  }, [username, checkUsernameAvailability]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
+    setUsernameChecked(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +71,11 @@ const SignUp = () => {
       return;
     }
     
+    if (isUsernameTaken) {
+      setError('This username is already taken');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -50,9 +85,17 @@ const SignUp = () => {
 
     try {
       await signUp(username.trim().toLowerCase(), email, password);
+      toast({
+        title: "Account created successfully",
+        description: "Welcome aboard!",
+      });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      if (err.message === "Username is already taken") {
+        setError("This username is already taken. Please choose another one.");
+      } else {
+        setError(err.message || 'Failed to create account');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,13 +135,40 @@ const SignUp = () => {
                       onChange={handleUsernameChange}
                       required
                       minLength={3}
+                      className={`${
+                        usernameChecked && username.length >= 3 
+                          ? isUsernameTaken 
+                            ? "border-red-500 focus:border-red-500" 
+                            : "border-green-500 focus:border-green-500" 
+                          : ""
+                      }`}
                     />
+                    {isCheckingUsername && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin h-4 w-4 border-2 border-maronaut-600 rounded-full border-t-transparent"></div>
+                      </div>
+                    )}
+                    {!isCheckingUsername && usernameChecked && username.length >= 3 && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        {isUsernameTaken ? (
+                          <X className="h-4 w-4 text-red-500" />
+                        ) : (
+                          <Check className="h-4 w-4 text-green-500" />
+                        )}
+                      </div>
+                    )}
                   </div>
                   {username && username.length < 3 && (
                     <p className="text-xs text-amber-500">Username must be at least 3 characters</p>
                   )}
                   {username && !/^[a-zA-Z0-9]+$/.test(username) && (
                     <p className="text-xs text-amber-500">Username can only contain letters and numbers</p>
+                  )}
+                  {usernameChecked && username.length >= 3 && isUsernameTaken && (
+                    <p className="text-xs text-red-500">This username is already taken</p>
+                  )}
+                  {usernameChecked && username.length >= 3 && !isUsernameTaken && (
+                    <p className="text-xs text-green-500">Username is available</p>
                   )}
                 </div>
                 
@@ -150,7 +220,7 @@ const SignUp = () => {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoading}>
+                  disabled={isLoading || isUsernameTaken}>
                   {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>

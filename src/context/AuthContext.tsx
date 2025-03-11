@@ -8,7 +8,8 @@ import {
   signOut, 
   updateProfile,
   User,
-  ensureCollectionExists
+  ensureCollectionExists,
+  isUsernameTaken
 } from '@/lib/firebase';
 import { createInitialProfile } from '@/services/profileService';
 
@@ -19,6 +20,7 @@ interface AuthContextType {
   signUp: (username: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  checkUsernameAvailability: (username: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,9 +49,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
+  const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+    if (!username || username.trim().length < 3) {
+      return false;
+    }
+    
+    try {
+      const isTaken = await isUsernameTaken(username.trim().toLowerCase());
+      return !isTaken;
+    } catch (error) {
+      console.error("Error checking username availability:", error);
+      throw error;
+    }
+  };
+
   const signUp = async (username: string, email: string, password: string) => {
     try {
       const trimmedUsername = username.trim().toLowerCase();
+      
+      // Check if username is already taken
+      const isAvailable = await checkUsernameAvailability(trimmedUsername);
+      if (!isAvailable) {
+        throw new Error("Username is already taken");
+      }
       
       console.log("Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -91,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     logout,
+    checkUsernameAvailability,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

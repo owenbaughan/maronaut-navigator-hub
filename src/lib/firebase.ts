@@ -1,6 +1,6 @@
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, CollectionReference } from "firebase/firestore";
+import { getFirestore, collection, CollectionReference, getDocs, query, where } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
 import { 
@@ -61,6 +61,23 @@ const ensureCollectionExists = async (collectionPath: string) => {
   }
 };
 
+// Check if a username is already taken
+const isUsernameTaken = async (username: string): Promise<boolean> => {
+  try {
+    console.log(`Checking if username already exists: ${username}`);
+    const q = query(
+      collection(db, "userProfiles"), 
+      where("username", "==", username.trim().toLowerCase())
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error("Error checking username:", error);
+    throw error;
+  }
+};
+
 // Ensure critical collections exist
 const initializeCollections = () => {
   ensureCollectionExists('userProfiles');
@@ -86,7 +103,8 @@ export {
   followingCollection,
   followRequestsCollection,
   collection,
-  ensureCollectionExists
+  ensureCollectionExists,
+  isUsernameTaken
 };
 
 export type { User };
