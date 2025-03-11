@@ -19,6 +19,8 @@ export interface FollowRequestItem {
   id: string;
   senderId: string;
   senderUsername: string;
+  senderFirstName?: string;
+  senderLastName?: string;
   timestamp: any;
 }
 
@@ -27,5 +29,7 @@ export interface FriendRequestItem {
   id: string;
   senderId: string;
   senderUsername: string;
+  senderFirstName?: string;
+  senderLastName?: string;
   timestamp: any;
 }

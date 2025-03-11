@@ -69,8 +69,12 @@ export const useUserSearch = (currentUserId: string | undefined, onUserAdded?: (
             }
           }
           
+          const profile = await getUserProfile(user.id);
+          
           return {
             ...user,
+            firstName: profile?.firstName,
+            lastName: profile?.lastName,
             status
           };
         })

@@ -1,3 +1,4 @@
+
 import { db, ensureCollectionExists, collection } from "../lib/firebase";
 import { 
   query,
@@ -83,6 +84,8 @@ export const followUser = async (userId: string, targetUserId: string) => {
         userId,
         followingId: targetUserId,
         username: targetProfile.username,
+        firstName: targetProfile.firstName || null,
+        lastName: targetProfile.lastName || null,
         photoURL: targetProfile.profilePicture || null,
         timestamp
       };
@@ -110,6 +113,8 @@ export const followUser = async (userId: string, targetUserId: string) => {
         senderId: userId,
         receiverId: targetUserId,
         senderUsername: userProfile.username,
+        senderFirstName: userProfile.firstName || null,
+        senderLastName: userProfile.lastName || null,
         receiverUsername: targetProfile.username,
         status: 'pending',
         timestamp
@@ -195,6 +200,8 @@ export const getFollowing = async (userId: string) => {
         userId: data.userId,
         followingId: data.followingId,
         username: data.username || "Unknown",
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
         photoURL: data.photoURL,
         timestamp: data.timestamp
       });
@@ -237,6 +244,8 @@ export const getFollowers = async (userId: string) => {
         userId: data.userId,
         followingId: data.followingId,
         username: data.username || "Unknown",
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
         photoURL: data.photoURL,
         timestamp: data.timestamp
       });
