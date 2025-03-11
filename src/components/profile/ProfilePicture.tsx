@@ -76,53 +76,30 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         return;
       }
       
-      // Create a local preview
-      const objectUrl = URL.createObjectURL(file);
-      setImageUrl(objectUrl);
+      console.log("Starting profile picture upload for user:", currentUser.uid);
+      const downloadURL = await uploadProfilePicture(currentUser.uid, file);
+      console.log("Profile picture upload succeeded. URL:", downloadURL);
       
-      try {
-        console.log("Starting profile picture upload for user:", currentUser.uid);
-        const downloadURL = await uploadProfilePicture(currentUser.uid, file);
-        console.log("Profile picture upload succeeded. URL:", downloadURL);
-        
-        // Clean up the object URL to prevent memory leaks
-        URL.revokeObjectURL(objectUrl);
-        
-        // Update the UI with the actual Firebase Storage URL
-        setImageUrl(downloadURL);
-        
-        // Update the user's profile in Firebase Auth
-        await updateProfilePicture(downloadURL);
-        
-        toast({
-          title: "Profile picture updated",
-          description: "Your profile picture has been updated successfully"
-        });
-        
-        // Notify parent component
-        if (onPictureUpdated) {
-          onPictureUpdated(downloadURL);
-        }
-      } catch (error) {
-        console.error("Error in Firebase upload:", error);
-        
-        // Revert to previous image if upload fails
-        URL.revokeObjectURL(objectUrl);
-        setImageUrl(url);
-        
-        toast({
-          title: "Upload failed",
-          description: "There was a problem uploading your profile picture",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error in file handling:", error);
-      setImageUrl(url);
+      // Update the UI with the actual Firebase Storage URL
+      setImageUrl(downloadURL);
+      
+      // Update the user's profile in Firebase Auth
+      await updateProfilePicture(downloadURL);
       
       toast({
-        title: "Something went wrong",
-        description: "There was a problem with your profile picture",
+        title: "Profile picture updated",
+        description: "Your profile picture has been updated successfully"
+      });
+      
+      // Notify parent component
+      if (onPictureUpdated) {
+        onPictureUpdated(downloadURL);
+      }
+    } catch (error) {
+      console.error("Error in upload:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was a problem uploading your profile picture",
         variant: "destructive"
       });
     } finally {

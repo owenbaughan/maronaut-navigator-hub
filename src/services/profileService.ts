@@ -81,17 +81,12 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
     const downloadURL = await getDownloadURL(snapshot.ref);
     console.log("Download URL:", downloadURL);
     
-    try {
-      const userRef = doc(db, "userProfiles", userId);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        await updateDoc(userRef, {
-          profilePicture: downloadURL,
-          updatedAt: serverTimestamp()
-        });
-        console.log("Updated user profile with new picture URL in Firestore");
-      } else {
+    const userRef = doc(db, "userProfiles", userId);
+    await updateDoc(userRef, {
+      profilePicture: downloadURL,
+      updatedAt: serverTimestamp()
+    }).catch(async (error) => {
+      if (error.code === 'not-found') {
         await setDoc(userRef, {
           userId,
           profilePicture: downloadURL,
@@ -99,11 +94,12 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
           updatedAt: serverTimestamp()
         });
         console.log("Created new user profile with picture URL in Firestore");
+      } else {
+        throw error;
       }
-    } catch (error) {
-      console.error("Error updating user profile in Firestore:", error);
-    }
+    });
     
+    console.log("Updated user profile with new picture URL in Firestore");
     return downloadURL;
   } catch (error) {
     console.error("Error uploading profile picture:", error);
