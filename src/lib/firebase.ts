@@ -94,7 +94,7 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     
   } catch (error) {
     console.error("Error in isUsernameTaken:", error);
-    return false; // Default to "not taken" if there's an error checking
+    throw new Error("Error checking username availability");
   }
 };
 
