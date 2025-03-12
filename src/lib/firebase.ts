@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -13,7 +14,7 @@ import {
 } from "firebase/auth";
 
 // Import the isUsernameTaken function from our new structure
-import { isUsernameTaken } from './services/profile';
+import { isUsernameTaken } from '@/services/profile';
 
 // Firebase configuration
 const firebaseConfig = {
