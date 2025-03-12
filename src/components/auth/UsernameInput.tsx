@@ -21,15 +21,17 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
 }) => {
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
-  const debouncedUsername = useDebounce(username, 500);
+  const debouncedUsername = useDebounce(username, 800); // Increased debounce time
 
   useEffect(() => {
     const checkAvailability = async () => {
+      // Don't check if username is too short
       if (debouncedUsername.length < 3) {
         setAvailable(null);
         return;
       }
 
+      // Don't check if username contains invalid characters
       if (!/^[a-zA-Z0-9]+$/.test(debouncedUsername)) {
         setAvailable(null);
         return;
@@ -40,9 +42,11 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
         const isAvailable = await isUsernameAvailable(debouncedUsername);
         setAvailable(isAvailable);
         
+        // Only update error state if the username is unavailable
         if (!isAvailable) {
           setError('This username is already taken');
         } else if (error === 'This username is already taken') {
+          // Only clear the error if it's related to username availability
           setError('');
         }
       } catch (err) {
@@ -59,14 +63,14 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
     const value = e.target.value;
     setUsername(value);
     
-    if (error.includes("username") || error === 'This username is already taken') {
+    // Only reset errors related to the username
+    if (error === 'This username is already taken' || 
+        error.includes('Username must be') || 
+        error.includes('Username can only contain')) {
       setError('');
     }
     
-    // Reset availability status when user is typing
-    if (value !== debouncedUsername) {
-      setAvailable(null);
-    }
+    // Don't reset availability until the debounced check runs
   };
 
   return (
@@ -101,16 +105,18 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Show only one validation message at a time */}
       {username && username.length < 3 && (
         <p className="text-xs text-amber-500">Username must be at least 3 characters</p>
       )}
-      {username && !/^[a-zA-Z0-9]+$/.test(username) && (
+      {username && username.length >= 3 && !/^[a-zA-Z0-9]+$/.test(username) && (
         <p className="text-xs text-amber-500">Username can only contain letters and numbers</p>
       )}
-      {available === false && username.length >= 3 && (
+      {available === false && username.length >= 3 && /^[a-zA-Z0-9]+$/.test(username) && (
         <p className="text-xs text-red-500">This username is already taken</p>
       )}
-      {available === true && username.length >= 3 && (
+      {available === true && username.length >= 3 && /^[a-zA-Z0-9]+$/.test(username) && (
         <p className="text-xs text-green-500">Username is available</p>
       )}
     </div>

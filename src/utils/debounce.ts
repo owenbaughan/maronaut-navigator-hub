@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 // Standalone debounce function
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait = 500
+  wait = 800
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
@@ -24,7 +24,7 @@ export function useDebounce<T>(value: T, delay?: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
+    const timer = setTimeout(() => setDebouncedValue(value), delay || 800);
 
     return () => {
       clearTimeout(timer);
