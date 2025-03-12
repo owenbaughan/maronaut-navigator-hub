@@ -23,7 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getUserProfile, saveUserProfile, BoatDetails, UserProfile } from "@/services/profileService";
+import { 
+  getUserProfile, 
+  saveUserProfile, 
+  BoatDetails, 
+  UserProfile 
+} from "@/services/profile";
 import { updateProfile } from "@/lib/firebase";
 
 interface ProfileEditDialogProps {

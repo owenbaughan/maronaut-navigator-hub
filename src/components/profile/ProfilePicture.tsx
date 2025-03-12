@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
-import { uploadProfilePicture } from '@/services/profileService';
+import { uploadProfilePicture } from '@/services/profile';
 import { toast } from '@/components/ui/use-toast';
 
 interface ProfilePictureProps {

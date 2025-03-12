@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -12,6 +11,9 @@ import {
   updateProfile,
   User
 } from "firebase/auth";
+
+// Import the isUsernameTaken function from our new structure
+import { isUsernameTaken } from './services/profile';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -61,21 +63,7 @@ const ensureCollectionExists = async (collectionPath: string) => {
   }
 };
 
-// Function no longer checks if username is taken - always returns false
-const isUsernameTaken = async (username: string): Promise<boolean> => {
-  return false; // Always return false - username is never taken
-};
-
-// Ensure critical collections exist
-const initializeCollections = () => {
-  ensureCollectionExists('userProfiles');
-  ensureCollectionExists('following');
-  ensureCollectionExists('followRequests');
-};
-
-// Call this once when the app initializes
-initializeCollections();
-
+// Re-export the isUsernameTaken function for backward compatibility
 export { 
   app, 
   db, 

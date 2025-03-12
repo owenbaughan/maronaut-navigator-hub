@@ -1,4 +1,3 @@
-
 // Re-export everything from our service files
 import { searchUsers } from './userSearchService';
 import { 
@@ -16,6 +15,9 @@ import {
 
 // Re-export the types
 export * from './types';
+
+// Import the getUserProfile function from our new structure
+import { getUserProfile } from './profile';
 
 // Re-export all functions
 export {
