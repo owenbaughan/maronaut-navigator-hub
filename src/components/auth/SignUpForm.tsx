@@ -8,6 +8,7 @@ import { AlertCircle } from 'lucide-react';
 import UsernameInput from './UsernameInput';
 import EmailInput from './EmailInput';
 import PasswordFields from './PasswordFields';
+import { isUsernameAvailable } from '@/services/profile';
 
 interface SignUpFormProps {
   signUp: (username: string, email: string, password: string) => Promise<void>;
@@ -45,6 +46,14 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
     
     try {
       setIsLoading(true);
+      
+      // Check username availability once more before proceeding
+      const isAvailable = await isUsernameAvailable(username.trim().toLowerCase());
+      if (!isAvailable) {
+        setError('This username is already taken. Please choose a different one.');
+        setIsLoading(false);
+        return;
+      }
       
       // Proceed with signup
       await signUp(username.trim().toLowerCase(), email, password);
@@ -92,7 +101,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={isLoading}
+        disabled={isLoading || error === 'This username is already taken'}
       >
         {isLoading ? 'Creating account...' : 'Sign Up'}
       </Button>
