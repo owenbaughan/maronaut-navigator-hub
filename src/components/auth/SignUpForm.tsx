@@ -20,7 +20,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [error, setError] = useState('');
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -45,6 +47,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
     
     try {
       setIsLoading(true);
+      
+      // Check username availability one more time before signup
+      const isAvailable = await checkUsernameAvailability(username.trim().toLowerCase());
+      
+      if (!isAvailable) {
+        setError('This username is already taken. Please choose another one.');
+        setUsernameAvailable(false);
+        setIsLoading(false);
+        return;
+      }
       
       // Proceed with signup
       await signUp(username.trim().toLowerCase(), email, password);
@@ -75,6 +87,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
         setUsername={setUsername}
         error={error}
         setError={setError}
+        checkAvailability={checkUsernameAvailability}
+        isAvailable={usernameAvailable}
+        setIsAvailable={setUsernameAvailable}
+        isChecking={isCheckingUsername}
+        setIsChecking={setIsCheckingUsername}
       />
       
       <EmailInput 
@@ -92,7 +109,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={isLoading}
+        disabled={isLoading || isCheckingUsername || usernameAvailable === false}
       >
         {isLoading ? 'Creating account...' : 'Sign Up'}
       </Button>

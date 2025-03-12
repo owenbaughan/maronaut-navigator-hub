@@ -11,6 +11,7 @@ import {
   ensureCollectionExists
 } from '@/lib/firebase';
 import { createInitialProfile } from '@/services/profileService';
+import { isUsernameAvailable } from '@/services/profile/usernameService';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -48,15 +49,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  // This function exists but no longer checks availability
+  // Updated to use the proper availability check
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
-    // Always return true - no longer checking availability
-    return true;
+    return await isUsernameAvailable(username);
   };
 
   const signUp = async (username: string, email: string, password: string) => {
     try {
       const trimmedUsername = username.trim().toLowerCase();
+      
+      // Check username availability one more time before creating account
+      const available = await isUsernameAvailable(trimmedUsername);
+      if (!available) {
+        throw new Error("This username is already taken. Please choose another one.");
+      }
       
       console.log("Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);

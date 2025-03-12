@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -11,9 +12,6 @@ import {
   updateProfile,
   User
 } from "firebase/auth";
-
-// Import the isUsernameTaken function from our new structure
-import { isUsernameTaken } from '@/services/profile';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -63,7 +61,6 @@ const ensureCollectionExists = async (collectionPath: string) => {
   }
 };
 
-// Re-export the isUsernameTaken function for backward compatibility
 export { 
   app, 
   db, 
@@ -80,7 +77,9 @@ export {
   followRequestsCollection,
   collection,
   ensureCollectionExists,
-  isUsernameTaken,
+  where,
+  query,
+  getDocs,
   limit,
   serverTimestamp
 };
