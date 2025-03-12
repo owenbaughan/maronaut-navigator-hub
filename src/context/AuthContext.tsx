@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -57,15 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log("AuthContext: Checking username availability for:", username);
-      // Call isUsernameTaken but invert the result for better API semantics
-      // (isUsernameTaken -> !isAvailable)
-      const taken = await isUsernameTaken(username.trim().toLowerCase());
-      const isAvailable = !taken;
+      const isTaken = await isUsernameTaken(username.trim().toLowerCase());
+      const isAvailable = !isTaken;
       console.log(`AuthContext: Username "${username}" is ${isAvailable ? 'available' : 'taken'}`);
       return isAvailable;
     } catch (error) {
       console.error("AuthContext: Error checking username availability:", error);
-      throw new Error("Error checking username availability. Please try again.");
+      return false;
     }
   };
 

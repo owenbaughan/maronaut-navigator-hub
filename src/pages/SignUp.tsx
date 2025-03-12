@@ -19,41 +19,42 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [usernameChecked, setUsernameChecked] = useState(false);
   const { signUp, checkUsernameAvailability } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const trimmedUsername = username.trim();
-    if (trimmedUsername.length >= 3 && /^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
-      const timer = setTimeout(async () => {
+    const checkUsername = async () => {
+      const trimmedUsername = username.trim();
+      if (trimmedUsername.length >= 3 && /^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
         setIsCheckingUsername(true);
         setUsernameChecked(false);
         try {
           console.log("SignUp: Initiating username availability check for:", trimmedUsername);
           const isAvailable = await checkUsernameAvailability(trimmedUsername);
           console.log("SignUp: Username check result:", isAvailable);
-          setIsUsernameTaken(!isAvailable);
+          setIsUsernameAvailable(isAvailable);
           setUsernameChecked(true);
           if (error.includes("username")) {
             setError('');
           }
         } catch (error: any) {
           console.error("SignUp: Error checking username:", error);
-          setError(error.message || "Error checking username availability");
+          setError('');
           setUsernameChecked(false);
         } finally {
           setIsCheckingUsername(false);
         }
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setUsernameChecked(false);
-      setIsUsernameTaken(false);
-    }
+      } else {
+        setUsernameChecked(false);
+        setIsUsernameAvailable(null);
+      }
+    };
+    
+    const timer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(timer);
   }, [username, checkUsernameAvailability, error]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,17 +88,7 @@ const SignUp = () => {
     try {
       setIsLoading(true);
       
-      console.log("SignUp: Final username check before submission:", username.trim().toLowerCase());
-      const isAvailable = await checkUsernameAvailability(username.trim().toLowerCase());
-      console.log("SignUp: Final username check result:", isAvailable);
-      
-      if (!isAvailable) {
-        setError('This username is already taken');
-        setIsUsernameTaken(true);
-        setIsLoading(false);
-        return;
-      }
-      
+      // Proceed with signup
       await signUp(username.trim().toLowerCase(), email, password);
       toast({
         title: "Account created successfully",
@@ -148,7 +139,7 @@ const SignUp = () => {
                       minLength={3}
                       className={`${
                         usernameChecked && username.length >= 3 
-                          ? isUsernameTaken 
+                          ? isUsernameAvailable === false
                             ? "border-red-500 focus:border-red-500" 
                             : "border-green-500 focus:border-green-500" 
                           : ""
@@ -161,7 +152,7 @@ const SignUp = () => {
                     )}
                     {!isCheckingUsername && usernameChecked && username.length >= 3 && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        {isUsernameTaken ? (
+                        {!isUsernameAvailable ? (
                           <X className="h-4 w-4 text-red-500" />
                         ) : (
                           <Check className="h-4 w-4 text-green-500" />
@@ -175,10 +166,10 @@ const SignUp = () => {
                   {username && !/^[a-zA-Z0-9]+$/.test(username) && (
                     <p className="text-xs text-amber-500">Username can only contain letters and numbers</p>
                   )}
-                  {usernameChecked && username.length >= 3 && isUsernameTaken && (
+                  {usernameChecked && username.length >= 3 && !isUsernameAvailable && (
                     <p className="text-xs text-red-500">This username is already taken</p>
                   )}
-                  {usernameChecked && username.length >= 3 && !isUsernameTaken && (
+                  {usernameChecked && username.length >= 3 && isUsernameAvailable && (
                     <p className="text-xs text-green-500">Username is available</p>
                   )}
                 </div>
@@ -231,7 +222,7 @@ const SignUp = () => {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoading || isUsernameTaken}>
+                  disabled={isLoading || isUsernameAvailable === false}>
                   {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>

@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -95,8 +94,7 @@ const isUsernameTaken = async (username: string): Promise<boolean> => {
     
   } catch (error) {
     console.error("Error in isUsernameTaken:", error);
-    // Propagate the error instead of assuming username is taken
-    throw error;
+    return false; // Default to "not taken" if there's an error checking
   }
 };
 

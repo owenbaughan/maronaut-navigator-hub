@@ -72,7 +72,7 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
     return isAvailable;
   } catch (error) {
     console.error("profileService: Error checking username availability:", error);
-    throw new Error("Failed to check username availability. Please try again.");
+    return false;
   }
 };
 
