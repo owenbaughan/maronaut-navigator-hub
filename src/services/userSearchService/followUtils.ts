@@ -1,5 +1,5 @@
 
-import { followUser, checkFollowingStatus } from '@/services/friendService';
+import { followUser, checkFollowingStatus } from '@/services/follow';
 import { getUserProfile } from '@/services/profileService';
 import { UserSearchResult } from '@/components/friends/types';
 

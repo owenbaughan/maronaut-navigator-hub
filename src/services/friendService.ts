@@ -1,3 +1,4 @@
+
 // Re-export everything from our service files
 import { searchUsers } from './userSearchService';
 import { 
@@ -6,7 +7,7 @@ import {
   unfollowUser, 
   getFollowing,
   getFollowers
-} from './followService';
+} from './follow';
 import {
   getFollowRequests,
   acceptFollowRequest,
