@@ -1,4 +1,4 @@
-import { db, storage, isUsernameTaken, serverTimestamp } from "../lib/firebase";
+import { db, storage, serverTimestamp } from "../lib/firebase";
 import { 
   doc, 
   getDoc, 
@@ -57,23 +57,7 @@ const getFromLocalStorage = (userId: string): UserProfile | null => {
 };
 
 export const isUsernameAvailable = async (username: string): Promise<boolean> => {
-  try {
-    console.log("profileService: Checking username availability for:", username);
-    const trimmedUsername = username.trim().toLowerCase();
-    
-    if (trimmedUsername.length < 3) {
-      console.log("profileService: Username too short, returning false");
-      return false;
-    }
-    
-    const isTaken = await isUsernameTaken(trimmedUsername);
-    const isAvailable = !isTaken;
-    console.log(`profileService: Username "${trimmedUsername}" is ${isAvailable ? 'available' : 'taken'}`);
-    return isAvailable;
-  } catch (error) {
-    console.error("profileService: Error checking username availability:", error);
-    return false;
-  }
+  return true;
 };
 
 export const uploadProfilePicture = async (userId: string, file: File): Promise<string> => {
@@ -157,13 +141,6 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
-        if (sanitizedProfile.username) {
-          const isAvailable = await isUsernameAvailable(sanitizedProfile.username);
-          if (!isAvailable) {
-            throw new Error(`Username '${sanitizedProfile.username}' is already taken`);
-          }
-        }
-        
         const defaultProfile = {
           ...sanitizedProfile,
           privacySettings: sanitizedProfile.privacySettings || getDefaultPrivacySettings(),
@@ -293,10 +270,6 @@ export const createInitialProfile = async (userId: string, email: string, userna
       console.log("Creating initial profile for new user:", userId);
       
       const trimmedUsername = username.trim().toLowerCase();
-      const isAvailable = await isUsernameAvailable(trimmedUsername);
-      if (!isAvailable) {
-        throw new Error(`Username '${trimmedUsername}' is already taken`);
-      }
       
       const initialProfile: UserProfile = {
         userId,

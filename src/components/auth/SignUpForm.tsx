@@ -42,19 +42,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       setError('Passwords do not match');
       return;
     }
-
-    // Final availability check before submission
-    try {
-      const isAvailable = await checkUsernameAvailability(username.trim().toLowerCase());
-      if (!isAvailable) {
-        setError('This username is already taken. Please choose another.');
-        return;
-      }
-    } catch (err: any) {
-      console.error("Error checking username availability during form submission:", err);
-      setError('Error checking username availability. Please try again.');
-      return;
-    }
     
     try {
       setIsLoading(true);
@@ -86,7 +73,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       <UsernameInput 
         username={username}
         setUsername={setUsername}
-        checkUsernameAvailability={checkUsernameAvailability}
         error={error}
         setError={setError}
       />

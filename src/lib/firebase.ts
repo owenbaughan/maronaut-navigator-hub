@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, CollectionReference, getDocs, query, where, limit, serverTimestamp } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -60,42 +61,9 @@ const ensureCollectionExists = async (collectionPath: string) => {
   }
 };
 
-// Check if a username is already taken
+// Function no longer checks if username is taken - always returns false
 const isUsernameTaken = async (username: string): Promise<boolean> => {
-  try {
-    // Validation
-    if (!username || username.trim().length < 3) {
-      console.log("Username too short or empty, considering as taken");
-      return true; // Consider short/empty usernames as "taken" to avoid unnecessary queries
-    }
-    
-    const trimmedUsername = username.trim().toLowerCase();
-    console.log(`Checking if username already exists: ${trimmedUsername}`);
-    
-    // Create a query against the userProfiles collection
-    const q = query(
-      userProfilesCollection, 
-      where("username", "==", trimmedUsername),
-      limit(1)
-    );
-    
-    // Execute the query
-    console.log("Executing username availability query");
-    const querySnapshot = await getDocs(q);
-    
-    // Log detailed results
-    console.log(`Username check query returned ${querySnapshot.size} documents`);
-    querySnapshot.forEach(doc => {
-      console.log(`Found match: Document ID: ${doc.id}, Data:`, doc.data());
-    });
-    
-    // Return true if any matching documents exist (username is taken)
-    return querySnapshot.size > 0;
-    
-  } catch (error) {
-    console.error("Error in isUsernameTaken:", error);
-    throw new Error("Error checking username availability");
-  }
+  return false; // Always return false - username is never taken
 };
 
 // Ensure critical collections exist

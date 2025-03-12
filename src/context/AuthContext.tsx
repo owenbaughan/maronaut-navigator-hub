@@ -8,8 +8,7 @@ import {
   signOut, 
   updateProfile,
   User,
-  ensureCollectionExists,
-  isUsernameTaken
+  ensureCollectionExists
 } from '@/lib/firebase';
 import { createInitialProfile } from '@/services/profileService';
 
@@ -49,32 +48,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
+  // This function exists but no longer checks availability
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
-    if (!username || username.trim().length < 3) {
-      console.log("Username too short, returning false");
-      return false;
-    }
-    
-    try {
-      console.log("AuthContext: Checking username availability for:", username);
-      const isTaken = await isUsernameTaken(username.trim().toLowerCase());
-      const isAvailable = !isTaken;
-      console.log(`AuthContext: Username "${username}" is ${isAvailable ? 'available' : 'taken'}`);
-      return isAvailable;
-    } catch (error) {
-      console.error("AuthContext: Error checking username availability:", error);
-      throw new Error("Error checking username availability. Please try again.");
-    }
+    // Always return true - no longer checking availability
+    return true;
   };
 
   const signUp = async (username: string, email: string, password: string) => {
     try {
       const trimmedUsername = username.trim().toLowerCase();
-      
-      const isAvailable = await checkUsernameAvailability(trimmedUsername);
-      if (!isAvailable) {
-        throw new Error("Username is already taken");
-      }
       
       console.log("Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
