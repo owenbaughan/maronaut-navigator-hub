@@ -51,10 +51,14 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !currentUser) return;
+    if (!file || !currentUser) {
+      console.log("No file selected or user not logged in");
+      return;
+    }
     
     try {
       setIsUploading(true);
+      console.log("File selected:", file.name, file.type, file.size);
       
       if (!file.type.startsWith('image/')) {
         toast({
@@ -116,7 +120,9 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
         className={`${sizeClasses[size]} ${editable ? 'cursor-pointer' : ''} border-2 border-white shadow-lg`}
         onClick={handleClick}
       >
-        <AvatarImage src={imageUrl} alt={username || "Profile"} />
+        {imageUrl ? (
+          <AvatarImage src={imageUrl} alt={username || "Profile"} />
+        ) : null}
         <AvatarFallback className="bg-maronaut-500 text-white">
           {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : getInitials(username)}
         </AvatarFallback>
