@@ -5,8 +5,7 @@ service cloud.firestore {
     match /userProfiles/{userId} {
       // Allow unauthenticated reads for username queries to check availability
       allow read: if request.auth != null || 
-                 (request.resource == null && 
-                  request.query.limit <= 1 && 
+                 (request.query.limit <= 1 && 
                   'username' in request.query.filters[0] &&
                   request.method == 'get');
       
