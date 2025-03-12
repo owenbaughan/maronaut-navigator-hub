@@ -30,6 +30,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
     e.preventDefault();
     setError('');
     
+    console.log("[SignUpForm] Form submission started");
+    
     if (username.trim().length < 3) {
       setError('Username must be at least 3 characters');
       return;
@@ -49,7 +51,10 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       setIsLoading(true);
       
       // Check username availability one more time before signup
-      const isAvailable = await checkUsernameAvailability(username.trim().toLowerCase());
+      console.log("[SignUpForm] Checking username availability before signup");
+      const normalizedUsername = username.trim().toLowerCase();
+      const isAvailable = await checkUsernameAvailability(normalizedUsername);
+      console.log(`[SignUpForm] Username "${normalizedUsername}" availability: ${isAvailable}`);
       
       if (!isAvailable) {
         setError('This username is already taken. Please choose another one.');
@@ -59,14 +64,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ signUp, checkUsernameAvailabili
       }
       
       // Proceed with signup
-      await signUp(username.trim().toLowerCase(), email, password);
+      console.log("[SignUpForm] Username is available, proceeding with signup");
+      await signUp(normalizedUsername, email, password);
       toast({
         title: "Account created successfully",
         description: "Welcome aboard!",
       });
       navigate('/dashboard');
     } catch (err: any) {
-      console.error("SignUp: Error during signup:", err);
+      console.error("[SignUpForm] Error during signup:", err);
       setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);

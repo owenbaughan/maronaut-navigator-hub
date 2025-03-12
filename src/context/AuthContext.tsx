@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   auth, 
@@ -35,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(user);
       
       if (user) {
-        console.log("User logged in, ensuring collections exist");
+        console.log("[AuthContext] User logged in, ensuring collections exist");
         await Promise.all([
           ensureCollectionExists('userProfiles'),
           ensureCollectionExists('following'),
@@ -49,22 +48,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  // Updated to use the proper availability check
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
-    return await isUsernameAvailable(username);
+    console.log(`[AuthContext] Checking username availability for: "${username}"`);
+    const result = await isUsernameAvailable(username);
+    console.log(`[AuthContext] Username availability result: ${result}`);
+    return result;
   };
 
   const signUp = async (username: string, email: string, password: string) => {
     try {
       const trimmedUsername = username.trim().toLowerCase();
       
-      // Check username availability one more time before creating account
-      const available = await isUsernameAvailable(trimmedUsername);
-      if (!available) {
+      console.log(`[AuthContext] Final check of username availability for: "${trimmedUsername}"`);
+      const isAvailable = await isUsernameAvailable(trimmedUsername);
+      console.log(`[AuthContext] Final username availability result: ${isAvailable}`);
+      
+      if (!isAvailable) {
         throw new Error("This username is already taken. Please choose another one.");
       }
       
-      console.log("Creating new user account with username:", trimmedUsername);
+      console.log("[AuthContext] Creating new user account with username:", trimmedUsername);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
@@ -72,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       await createInitialProfile(user.uid, email, trimmedUsername);
     } catch (error: any) {
-      console.error("Error creating account:", error);
+      console.error("[AuthContext] Error creating account:", error);
       throw error;
     }
   };

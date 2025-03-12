@@ -33,22 +33,26 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
     debounce(async (value: string) => {
       if (value.length < 3) {
         setIsAvailable(null);
+        setIsChecking(false);
         return;
       }
 
       if (!/^[a-zA-Z0-9]+$/.test(value)) {
         setIsAvailable(false);
+        setIsChecking(false);
         return;
       }
 
       try {
+        console.log(`[UsernameInput] Checking availability for: "${value}"`);
         const available = await checkAvailability(value.toLowerCase());
+        console.log(`[UsernameInput] Availability result: ${available}`);
         setIsAvailable(available);
         if (!available) {
-          console.log(`Username "${value}" is already taken`);
+          console.log(`[UsernameInput] Username "${value}" is already taken`);
         }
       } catch (err) {
-        console.error("Error checking username availability:", err);
+        console.error("[UsernameInput] Error checking username availability:", err);
         setIsAvailable(null);
       } finally {
         setIsChecking(false);
@@ -63,6 +67,7 @@ const UsernameInput: React.FC<UsernameInputProps> = ({
     setUsername(value);
     
     if (value.length >= 3) {
+      console.log(`[UsernameInput] Username changed to: "${value}", starting check`);
       setIsChecking(true);
       setIsAvailable(null);
     } else {
