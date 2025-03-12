@@ -55,8 +55,11 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserAdded }) => {
     setDropdownOpen(false);
     setSearchQuery('');
     
-    // Dispatch custom event to notify parent component
-    const event = new CustomEvent('viewUserProfile', { detail: { userId } });
+    // Dispatch a custom event that will be captured by the parent component
+    const event = new CustomEvent('viewUserProfile', { 
+      detail: { userId },
+      bubbles: true // Make sure the event bubbles up through the DOM
+    });
     document.dispatchEvent(event);
   };
 

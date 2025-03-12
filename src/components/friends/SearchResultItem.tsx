@@ -57,6 +57,12 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     return user.username.charAt(0).toUpperCase();
   };
 
+  // Handle click on view profile
+  const handleViewProfileClick = () => {
+    console.log("View profile clicked for user:", user.id);
+    onViewProfile(user.id);
+  };
+
   return (
     <div 
       key={user.id} 
@@ -82,17 +88,15 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
-        {/* View Profile button for public profiles */}
-        {isPublicProfile && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewProfile(user.id)}
-          >
-            <User size={16} className="mr-1" />
-            View Profile
-          </Button>
-        )}
+        {/* View Profile button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleViewProfileClick}
+        >
+          <User size={16} className="mr-1" />
+          View Profile
+        </Button>
         
         {/* Following status buttons */}
         {user.status === 'following' ? (

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -54,15 +55,21 @@ const FriendsFeed = () => {
   }, [currentUser]);
   
   useEffect(() => {
-    const handleViewUserProfile = (event: CustomEvent) => {
-      const { userId } = event.detail;
-      handleViewUserProfile(userId);
+    // Setup event listener for user profile viewing
+    const handleViewUserProfileEvent = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.userId) {
+        console.log('View profile event received for user:', customEvent.detail.userId);
+        handleViewUserProfile(customEvent.detail.userId);
+      }
     };
     
-    document.addEventListener('viewUserProfile', handleViewUserProfile as EventListener);
+    // Add event listener
+    document.addEventListener('viewUserProfile', handleViewUserProfileEvent);
     
+    // Clean up event listener on unmount
     return () => {
-      document.removeEventListener('viewUserProfile', handleViewUserProfile as EventListener);
+      document.removeEventListener('viewUserProfile', handleViewUserProfileEvent);
     };
   }, []);
   
@@ -112,6 +119,7 @@ const FriendsFeed = () => {
   };
 
   const handleViewUserProfile = (userId: string) => {
+    console.log('Handling view profile for user:', userId);
     if (!showUserProfile) {
       setPrevActiveTab(activeTab);
     }

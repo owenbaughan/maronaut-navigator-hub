@@ -4,17 +4,28 @@ import { getUserProfile } from "./profileCoreService";
 
 export const getPublicUserProfile = async (userId: string): Promise<Partial<UserProfile> | null> => {
   try {
+    if (!userId) {
+      console.error("Cannot fetch public profile: userId is required");
+      return null;
+    }
+    
+    console.log("Fetching public profile for user:", userId);
     const fullProfile = await getUserProfile(userId);
     
-    if (!fullProfile) return null;
+    if (!fullProfile) {
+      console.error("No profile found for user:", userId);
+      return null;
+    }
     
     if (fullProfile.privacySettings && !fullProfile.privacySettings.isPublicProfile) {
+      console.log("User has a private profile, returning limited data");
       return {
         userId: fullProfile.userId,
         username: fullProfile.username,
       };
     }
     
+    console.log("Returning public profile data for user:", userId);
     const publicProfile: Partial<UserProfile> = {
       userId: fullProfile.userId,
       username: fullProfile.username,
@@ -22,6 +33,7 @@ export const getPublicUserProfile = async (userId: string): Promise<Partial<User
       lastName: fullProfile.lastName,
       bio: fullProfile.bio,
       sailingSince: fullProfile.sailingSince,
+      profilePicture: fullProfile.profilePicture,
     };
     
     if (!fullProfile.privacySettings || fullProfile.privacySettings.showEmail) {
