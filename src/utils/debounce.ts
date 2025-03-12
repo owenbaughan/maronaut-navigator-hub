@@ -1,35 +1,12 @@
 
-import { useState, useEffect } from 'react';
-
-// Standalone debounce function
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait = 800
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return function(...args: Parameters<T>) {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    
-    timeout = setTimeout(() => {
-      func(...args);
-    }, wait);
+/**
+ * Creates a debounced function that delays invoking func until after wait milliseconds
+ * have elapsed since the last time the debounced function was invoked.
+ */
+export const debounce = <F extends (...args: any[]) => any>(func: F, delay: number) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function(...args: Parameters<F>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
   };
-}
-
-// React hook for debounced values
-export function useDebounce<T>(value: T, delay?: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay || 800);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
+};
